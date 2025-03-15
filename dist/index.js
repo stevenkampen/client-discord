@@ -58,7 +58,7 @@ var getAttachmentIds = async (runtime, message, state) => {
     });
     console.log("response", response);
     const parsedResponse = parseJSONObjectFromText(response);
-    if ((parsedResponse == null ? void 0 : parsedResponse.objective) && (parsedResponse == null ? void 0 : parsedResponse.attachmentIds)) {
+    if (parsedResponse?.objective && parsedResponse?.attachmentIds) {
       return parsedResponse;
     }
   }
@@ -118,7 +118,6 @@ var summarizeAction = {
     );
   },
   handler: async (runtime, message, state, options, callback) => {
-    var _a, _b;
     state = await runtime.composeState(message);
     const callbackData = {
       text: "",
@@ -174,7 +173,7 @@ ${attachment.text}`).join("\n\n");
       return;
     }
     callbackData.text = currentSummary.trim();
-    if (callbackData.text && (((_a = currentSummary.trim()) == null ? void 0 : _a.split("\n").length) < 4 || ((_b = currentSummary.trim()) == null ? void 0 : _b.split(" ").length) < 100)) {
+    if (callbackData.text && (currentSummary.trim()?.split("\n").length < 4 || currentSummary.trim()?.split(" ").length < 100)) {
       callbackData.text = `Here is the summary:
 \`\`\`md
 ${currentSummary.trim()}
@@ -317,7 +316,7 @@ var getMediaUrl = async (runtime, message, state) => {
       modelClass: ModelClass2.SMALL
     });
     const parsedResponse = parseJSONObjectFromText2(response);
-    if (parsedResponse == null ? void 0 : parsedResponse.mediaUrl) {
+    if (parsedResponse?.mediaUrl) {
       return parsedResponse.mediaUrl;
     }
   }
@@ -485,7 +484,6 @@ var joinvoice_default = {
   },
   description: "Join a voice channel to participate in voice chat.",
   handler: async (runtime, message, state) => {
-    var _a, _b, _c, _d, _e;
     if (!state) {
       console.error("State is not available.");
     }
@@ -493,7 +491,7 @@ var joinvoice_default = {
     if (!discordMessage.content) {
       discordMessage.content = message.content.text;
     }
-    const id = (_a = discordMessage.guild) == null ? void 0 : _a.id;
+    const id = discordMessage.guild?.id;
     const client = state.discordClient;
     const voiceChannels = client.guilds.cache.get(id).channels.cache.filter(
       (channel) => channel.type === ChannelType.GuildVoice
@@ -507,7 +505,7 @@ var joinvoice_default = {
     if (targetChannel) {
       joinVoiceChannel({
         channelId: targetChannel.id,
-        guildId: (_b = discordMessage.guild) == null ? void 0 : _b.id,
+        guildId: discordMessage.guild?.id,
         adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
         selfDeaf: false,
         selfMute: false,
@@ -516,10 +514,10 @@ var joinvoice_default = {
       return true;
     } else {
       const member = discordMessage.member;
-      if ((_c = member == null ? void 0 : member.voice) == null ? void 0 : _c.channel) {
+      if (member?.voice?.channel) {
         joinVoiceChannel({
           channelId: member.voice.channel.id,
-          guildId: (_d = discordMessage.guild) == null ? void 0 : _d.id,
+          guildId: discordMessage.guild?.id,
           adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
           selfDeaf: false,
           selfMute: false,
@@ -568,7 +566,7 @@ You should only respond with the name of the voice channel or none, no commentar
         if (targetChannel2) {
           joinVoiceChannel({
             channelId: targetChannel2.id,
-            guildId: (_e = discordMessage.guild) == null ? void 0 : _e.id,
+            guildId: discordMessage.guild?.id,
             adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
             selfDeaf: false,
             selfMute: false,
@@ -759,7 +757,6 @@ var leavevoice_default = {
   },
   description: "Leave the current voice channel.",
   handler: async (runtime, message, state) => {
-    var _a, _b, _c;
     if (!state.discordClient) {
       return;
     }
@@ -767,13 +764,12 @@ var leavevoice_default = {
     if (!discordMessage) {
       throw new Error("Discord message is not available in the state.");
     }
-    const voiceChannels = (_c = (_b = state.discordClient) == null ? void 0 : _b.guilds.cache.get((_a = discordMessage.guild) == null ? void 0 : _a.id)) == null ? void 0 : _c.channels.cache.filter(
+    const voiceChannels = state.discordClient?.guilds.cache.get(discordMessage.guild?.id)?.channels.cache.filter(
       (channel) => channel.type === ChannelType2.GuildVoice
     );
-    voiceChannels == null ? void 0 : voiceChannels.forEach((_channel) => {
-      var _a2;
+    voiceChannels?.forEach((_channel) => {
       const connection = getVoiceConnection(
-        (_a2 = discordMessage.guild) == null ? void 0 : _a2.id
+        discordMessage.guild?.id
       );
       if (connection) {
         connection.destroy();
@@ -942,7 +938,6 @@ Your response must be formatted as a JSON block with this structure:
 \`\`\`
 `;
 var getDateRange = async (runtime, message, state) => {
-  var _a, _b, _c, _d;
   state = await runtime.composeState(message);
   const context = composeContext4({
     state,
@@ -958,22 +953,22 @@ var getDateRange = async (runtime, message, state) => {
     const parsedResponse = parseJSONObjectFromText3(response);
     if (parsedResponse) {
       if (parsedResponse.objective && parsedResponse.start && parsedResponse.end) {
-        const startIntegerString = (_a = parsedResponse.start.match(/\d+/)) == null ? void 0 : _a[0];
-        const endIntegerString = (_b = parsedResponse.end.match(
+        const startIntegerString = parsedResponse.start.match(/\d+/)?.[0];
+        const endIntegerString = parsedResponse.end.match(
           /\d+/
-        )) == null ? void 0 : _b[0];
+        )?.[0];
         const multipliers = {
           second: 1 * 1e3,
           minute: 60 * 1e3,
           hour: 3600 * 1e3,
           day: 86400 * 1e3
         };
-        const startMultiplier = (_c = parsedResponse.start.match(
+        const startMultiplier = parsedResponse.start.match(
           /second|minute|hour|day/
-        )) == null ? void 0 : _c[0];
-        const endMultiplier = (_d = parsedResponse.end.match(
+        )?.[0];
+        const endMultiplier = parsedResponse.end.match(
           /second|minute|hour|day/
-        )) == null ? void 0 : _d[0];
+        )?.[0];
         const startInteger = startIntegerString ? Number.parseInt(startIntegerString) : 0;
         const endInteger = endIntegerString ? Number.parseInt(endIntegerString) : 0;
         const startTime = startInteger * multipliers[startMultiplier];
@@ -1044,7 +1039,6 @@ var summarizeAction2 = {
     );
   },
   handler: async (runtime, message, state, options, callback) => {
-    var _a, _b;
     state = await runtime.composeState(message);
     const callbackData = {
       text: "",
@@ -1075,15 +1069,14 @@ var summarizeAction2 = {
     });
     const actorMap = new Map(actors.map((actor) => [actor.id, actor]));
     const formattedMemories = memories.map((memory) => {
-      var _a2, _b2, _c;
-      const attachments = (_a2 = memory.content.attachments) == null ? void 0 : _a2.map((attachment) => {
+      const attachments = memory.content.attachments?.map((attachment) => {
         return `---
 Attachment: ${attachment.id}
 ${attachment.description}
 ${attachment.text}
 ---`;
       }).join("\n");
-      return `${((_b2 = actorMap.get(memory.userId)) == null ? void 0 : _b2.name) ?? "Unknown User"} (${((_c = actorMap.get(memory.userId)) == null ? void 0 : _c.username) ?? ""}): ${memory.content.text}
+      return `${actorMap.get(memory.userId)?.name ?? "Unknown User"} (${actorMap.get(memory.userId)?.username ?? ""}): ${memory.content.text}
 ${attachments}`;
     }).join("\n");
     let currentSummary = "";
@@ -1122,7 +1115,7 @@ ${attachments}`;
       return;
     }
     callbackData.text = currentSummary.trim();
-    if (callbackData.text && (((_a = currentSummary.trim()) == null ? void 0 : _a.split("\n").length) < 4 || ((_b = currentSummary.trim()) == null ? void 0 : _b.split(" ").length) < 100)) {
+    if (callbackData.text && (currentSummary.trim()?.split("\n").length < 4 || currentSummary.trim()?.split(" ").length < 100)) {
       callbackData.text = `Here is the summary:
 \`\`\`md
 ${currentSummary.trim()}
@@ -1251,7 +1244,7 @@ var getMediaAttachmentId = async (runtime, message, state) => {
     });
     console.log("response", response);
     const parsedResponse = parseJSONObjectFromText4(response);
-    if (parsedResponse == null ? void 0 : parsedResponse.attachmentId) {
+    if (parsedResponse?.attachmentId) {
       return parsedResponse.attachmentId;
     }
   }
@@ -1293,7 +1286,6 @@ var transcribeMediaAction = {
     );
   },
   handler: async (runtime, message, state, options, callback) => {
-    var _a, _b;
     state = await runtime.composeState(message);
     const callbackData = {
       text: "",
@@ -1322,7 +1314,7 @@ var transcribeMediaAction = {
     }
     const mediaTranscript = attachment.text;
     callbackData.text = mediaTranscript.trim();
-    if (callbackData.text && (((_a = callbackData.text) == null ? void 0 : _a.split("\n").length) < 4 || ((_b = callbackData.text) == null ? void 0 : _b.split(" ").length) < 100)) {
+    if (callbackData.text && (callbackData.text?.split("\n").length < 4 || callbackData.text?.split(" ").length < 100)) {
       callbackData.text = `Here is the transcript:
 \`\`\`md
 ${mediaTranscript.trim()}
@@ -1389,11 +1381,12 @@ import { composeContext as composeContext6, composeRandomUser } from "@elizaos/c
 import { generateMessageResponse, generateShouldRespond } from "@elizaos/core";
 import {
   ModelClass as ModelClass8,
-  ServiceType as ServiceType3
+  ServiceType as ServiceType2
 } from "@elizaos/core";
 import { stringToUuid, getEmbeddingZeroVector } from "@elizaos/core";
 import {
-  ChannelType as ChannelType4
+  ChannelType as ChannelType4,
+  TextChannel
 } from "discord.js";
 import { elizaLogger as elizaLogger2 } from "@elizaos/core";
 
@@ -1401,12 +1394,9 @@ import { elizaLogger as elizaLogger2 } from "@elizaos/core";
 import { generateText as generateText6, trimTokens as trimTokens3 } from "@elizaos/core";
 import { parseJSONObjectFromText as parseJSONObjectFromText5 } from "@elizaos/core";
 import {
-  ModelClass as ModelClass6,
-  ServiceType as ServiceType2
+  ModelClass as ModelClass6
 } from "@elizaos/core";
 import { Collection } from "discord.js";
-import ffmpeg from "fluent-ffmpeg";
-import fs2 from "fs";
 async function generateSummary(runtime, text) {
   text = await trimTokens3(text, 1e5, runtime);
   const prompt = `Please generate a concise summary for the following text:
@@ -1428,7 +1418,7 @@ async function generateSummary(runtime, text) {
     modelClass: ModelClass6.SMALL
   });
   const parsedResponse = parseJSONObjectFromText5(response);
-  if ((parsedResponse == null ? void 0 : parsedResponse.title) && (parsedResponse == null ? void 0 : parsedResponse.summary)) {
+  if (parsedResponse?.title && parsedResponse?.summary) {
     return {
       title: parsedResponse.title,
       description: parsedResponse.summary
@@ -1457,128 +1447,17 @@ var AttachmentManager = class {
     return processedAttachments;
   }
   async processAttachment(attachment) {
-    var _a, _b, _c, _d, _e, _f;
     if (this.attachmentCache.has(attachment.url)) {
       return this.attachmentCache.get(attachment.url);
     }
     let media = null;
-    if ((_a = attachment.contentType) == null ? void 0 : _a.startsWith("application/pdf")) {
-      media = await this.processPdfAttachment(attachment);
-    } else if ((_b = attachment.contentType) == null ? void 0 : _b.startsWith("text/plain")) {
+    if (attachment.contentType?.startsWith("text/plain")) {
       media = await this.processPlaintextAttachment(attachment);
-    } else if (((_c = attachment.contentType) == null ? void 0 : _c.startsWith("audio/")) || ((_d = attachment.contentType) == null ? void 0 : _d.startsWith("video/mp4"))) {
-      media = await this.processAudioVideoAttachment(attachment);
-    } else if ((_e = attachment.contentType) == null ? void 0 : _e.startsWith("image/")) {
-      media = await this.processImageAttachment(attachment);
-    } else if (((_f = attachment.contentType) == null ? void 0 : _f.startsWith("video/")) || this.runtime.getService(ServiceType2.VIDEO).isVideoUrl(attachment.url)) {
-      media = await this.processVideoAttachment(attachment);
-    } else {
-      media = await this.processGenericAttachment(attachment);
     }
     if (media) {
       this.attachmentCache.set(attachment.url, media);
     }
     return media;
-  }
-  async processAudioVideoAttachment(attachment) {
-    var _a, _b, _c, _d;
-    try {
-      const response = await fetch(attachment.url);
-      const audioVideoArrayBuffer = await response.arrayBuffer();
-      let audioBuffer;
-      if ((_a = attachment.contentType) == null ? void 0 : _a.startsWith("audio/")) {
-        audioBuffer = Buffer.from(audioVideoArrayBuffer);
-      } else if ((_b = attachment.contentType) == null ? void 0 : _b.startsWith("video/mp4")) {
-        audioBuffer = await this.extractAudioFromMP4(
-          audioVideoArrayBuffer
-        );
-      } else {
-        throw new Error("Unsupported audio/video format");
-      }
-      const transcriptionService = this.runtime.getService(
-        ServiceType2.TRANSCRIPTION
-      );
-      if (!transcriptionService) {
-        throw new Error("Transcription service not found");
-      }
-      const transcription = await transcriptionService.transcribeAttachment(audioBuffer);
-      const { title, description } = await generateSummary(
-        this.runtime,
-        transcription
-      );
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: title || "Audio/Video Attachment",
-        source: ((_c = attachment.contentType) == null ? void 0 : _c.startsWith("audio/")) ? "Audio" : "Video",
-        description: description || "User-uploaded audio/video attachment which has been transcribed",
-        text: transcription || "Audio/video content not available"
-      };
-    } catch (error) {
-      console.error(
-        `Error processing audio/video attachment: ${error.message}`
-      );
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: "Audio/Video Attachment",
-        source: ((_d = attachment.contentType) == null ? void 0 : _d.startsWith("audio/")) ? "Audio" : "Video",
-        description: "An audio/video attachment (transcription failed)",
-        text: `This is an audio/video attachment. File name: ${attachment.name}, Size: ${attachment.size} bytes, Content type: ${attachment.contentType}`
-      };
-    }
-  }
-  async extractAudioFromMP4(mp4Data) {
-    const tempMP4File = `temp_${Date.now()}.mp4`;
-    const tempAudioFile = `temp_${Date.now()}.mp3`;
-    try {
-      fs2.writeFileSync(tempMP4File, Buffer.from(mp4Data));
-      await new Promise((resolve, reject) => {
-        ffmpeg(tempMP4File).outputOptions("-vn").audioCodec("libmp3lame").save(tempAudioFile).on("end", () => {
-          resolve();
-        }).on("error", (err) => {
-          reject(err);
-        }).run();
-      });
-      const audioData = fs2.readFileSync(tempAudioFile);
-      return audioData;
-    } finally {
-      if (fs2.existsSync(tempMP4File)) {
-        fs2.unlinkSync(tempMP4File);
-      }
-      if (fs2.existsSync(tempAudioFile)) {
-        fs2.unlinkSync(tempAudioFile);
-      }
-    }
-  }
-  async processPdfAttachment(attachment) {
-    try {
-      const response = await fetch(attachment.url);
-      const pdfBuffer = await response.arrayBuffer();
-      const text = await this.runtime.getService(ServiceType2.PDF).convertPdfToText(Buffer.from(pdfBuffer));
-      const { title, description } = await generateSummary(
-        this.runtime,
-        text
-      );
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: title || "PDF Attachment",
-        source: "PDF",
-        description: description || "A PDF document",
-        text
-      };
-    } catch (error) {
-      console.error(`Error processing PDF attachment: ${error.message}`);
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: "PDF Attachment (conversion failed)",
-        source: "PDF",
-        description: "A PDF document that could not be converted to text",
-        text: `This is a PDF attachment. File name: ${attachment.name}, Size: ${attachment.size} bytes`
-      };
-    }
   }
   async processPlaintextAttachment(attachment) {
     try {
@@ -1609,77 +1488,6 @@ var AttachmentManager = class {
         text: `This is a plaintext attachment. File name: ${attachment.name}, Size: ${attachment.size} bytes`
       };
     }
-  }
-  async processImageAttachment(attachment) {
-    try {
-      const { description, title } = await this.runtime.getService(
-        ServiceType2.IMAGE_DESCRIPTION
-      ).describeImage(attachment.url);
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: title || "Image Attachment",
-        source: "Image",
-        description: description || "An image attachment",
-        text: description || "Image content not available"
-      };
-    } catch (error) {
-      console.error(
-        `Error processing image attachment: ${error.message}`
-      );
-      return this.createFallbackImageMedia(attachment);
-    }
-  }
-  createFallbackImageMedia(attachment) {
-    return {
-      id: attachment.id,
-      url: attachment.url,
-      title: "Image Attachment",
-      source: "Image",
-      description: "An image attachment (recognition failed)",
-      text: `This is an image attachment. File name: ${attachment.name}, Size: ${attachment.size} bytes, Content type: ${attachment.contentType}`
-    };
-  }
-  async processVideoAttachment(attachment) {
-    const videoService = this.runtime.getService(
-      ServiceType2.VIDEO
-    );
-    if (!videoService) {
-      throw new Error("Video service not found");
-    }
-    if (videoService.isVideoUrl(attachment.url)) {
-      const videoInfo = await videoService.processVideo(
-        attachment.url,
-        this.runtime
-      );
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: videoInfo.title,
-        source: "YouTube",
-        description: videoInfo.description,
-        text: videoInfo.text
-      };
-    } else {
-      return {
-        id: attachment.id,
-        url: attachment.url,
-        title: "Video Attachment",
-        source: "Video",
-        description: "A video attachment",
-        text: "Video content not available"
-      };
-    }
-  }
-  async processGenericAttachment(attachment) {
-    return {
-      id: attachment.id,
-      url: attachment.url,
-      title: "Generic Attachment",
-      source: "Generic",
-      description: "A generic attachment",
-      text: "Attachment content not available"
-    };
   }
 };
 
@@ -2015,7 +1823,7 @@ async function sendMessageInChunks(channel, content, inReplyTo, files) {
 function splitMessage(content) {
   const messages = [];
   let currentMessage = "";
-  const rawLines = (content == null ? void 0 : content.split("\n")) || [];
+  const rawLines = content?.split("\n") || [];
   const lines = rawLines.flatMap((line) => {
     const chunks = [];
     while (line.length > MAX_MESSAGE_LENGTH) {
@@ -2038,7 +1846,6 @@ function splitMessage(content) {
   return messages;
 }
 function canSendMessage(channel) {
-  var _a;
   if (!channel) {
     return {
       canSend: false,
@@ -2051,7 +1858,7 @@ function canSendMessage(channel) {
       reason: null
     };
   }
-  const botMember = (_a = channel.guild) == null ? void 0 : _a.members.cache.get(channel.client.user.id);
+  const botMember = channel.guild?.members.cache.get(channel.client.user.id);
   if (!botMember) {
     return {
       canSend: false,
@@ -2156,20 +1963,19 @@ var MessageManager = class {
   lastChannelActivity = {};
   autoPostInterval;
   constructor(discordClient, voiceManager) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
     this.client = discordClient.client;
     this.voiceManager = voiceManager;
     this.discordClient = discordClient;
     this.runtime = discordClient.runtime;
     this.attachmentManager = new AttachmentManager(this.runtime);
     this.autoPostConfig = {
-      enabled: ((_c = (_b = (_a = this.runtime.character.clientConfig) == null ? void 0 : _a.discord) == null ? void 0 : _b.autoPost) == null ? void 0 : _c.enabled) || false,
-      monitorTime: ((_f = (_e = (_d = this.runtime.character.clientConfig) == null ? void 0 : _d.discord) == null ? void 0 : _e.autoPost) == null ? void 0 : _f.monitorTime) || 3e5,
-      inactivityThreshold: ((_i = (_h = (_g = this.runtime.character.clientConfig) == null ? void 0 : _g.discord) == null ? void 0 : _h.autoPost) == null ? void 0 : _i.inactivityThreshold) || 36e5,
+      enabled: this.runtime.character.clientConfig?.discord?.autoPost?.enabled || false,
+      monitorTime: this.runtime.character.clientConfig?.discord?.autoPost?.monitorTime || 3e5,
+      inactivityThreshold: this.runtime.character.clientConfig?.discord?.autoPost?.inactivityThreshold || 36e5,
       // 1 hour default
-      mainChannelId: (_l = (_k = (_j = this.runtime.character.clientConfig) == null ? void 0 : _j.discord) == null ? void 0 : _k.autoPost) == null ? void 0 : _l.mainChannelId,
-      announcementChannelIds: ((_o = (_n = (_m = this.runtime.character.clientConfig) == null ? void 0 : _m.discord) == null ? void 0 : _n.autoPost) == null ? void 0 : _o.announcementChannelIds) || [],
-      minTimeBetweenPosts: ((_r = (_q = (_p = this.runtime.character.clientConfig) == null ? void 0 : _p.discord) == null ? void 0 : _q.autoPost) == null ? void 0 : _r.minTimeBetweenPosts) || 72e5
+      mainChannelId: this.runtime.character.clientConfig?.discord?.autoPost?.mainChannelId,
+      announcementChannelIds: this.runtime.character.clientConfig?.discord?.autoPost?.announcementChannelIds || [],
+      minTimeBetweenPosts: this.runtime.character.clientConfig?.discord?.autoPost?.minTimeBetweenPosts || 72e5
       // 2 hours default
     };
     if (this.autoPostConfig.enabled) {
@@ -2177,23 +1983,22 @@ var MessageManager = class {
     }
   }
   async handleMessage(message) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
-    if (((_b = (_a = this.runtime.character.clientConfig) == null ? void 0 : _a.discord) == null ? void 0 : _b.allowedChannelIds) && !this.runtime.character.clientConfig.discord.allowedChannelIds.includes(message.channelId)) {
+    if (this.runtime.character.clientConfig?.discord?.allowedChannelIds && !this.runtime.character.clientConfig.discord.allowedChannelIds.includes(message.channelId)) {
       return;
     }
     this.lastChannelActivity[message.channelId] = Date.now();
-    if (message.interaction || message.author.id === ((_c = this.client.user) == null ? void 0 : _c.id)) {
+    if (message.interaction || message.author.id === this.client.user?.id) {
       return;
     }
-    if (((_e = (_d = this.runtime.character.clientConfig) == null ? void 0 : _d.discord) == null ? void 0 : _e.shouldIgnoreBotMessages) && ((_f = message.author) == null ? void 0 : _f.bot)) {
+    if (this.runtime.character.clientConfig?.discord?.shouldIgnoreBotMessages && message.author?.bot) {
       return;
     }
-    if ((_h = (_g = this.runtime.character.clientConfig) == null ? void 0 : _g.discord) == null ? void 0 : _h.shouldRespondOnlyToMentions) {
+    if (this.runtime.character.clientConfig?.discord?.shouldRespondOnlyToMentions) {
       if (!this._isMessageForMe(message)) {
         return;
       }
     }
-    if (((_j = (_i = this.runtime.character.clientConfig) == null ? void 0 : _i.discord) == null ? void 0 : _j.shouldIgnoreDirectMessages) && message.channel.type === ChannelType4.DM) {
+    if (this.runtime.character.clientConfig?.discord?.shouldIgnoreDirectMessages && message.channel.type === ChannelType4.DM) {
       return;
     }
     const userId = message.author.id;
@@ -2202,11 +2007,11 @@ var MessageManager = class {
     const channelId = message.channel.id;
     const isDirectlyMentioned = this._isMessageForMe(message);
     const hasInterest = this._checkInterest(message.channelId);
-    if (((_l = (_k = this.runtime.character.clientConfig) == null ? void 0 : _k.discord) == null ? void 0 : _l.isPartOfTeam) && !((_n = (_m = this.runtime.character.clientConfig) == null ? void 0 : _m.discord) == null ? void 0 : _n.shouldRespondOnlyToMentions)) {
+    if (this.runtime.character.clientConfig?.discord?.isPartOfTeam && !this.runtime.character.clientConfig?.discord?.shouldRespondOnlyToMentions) {
       const authorId = this._getNormalizedUserId(message.author.id);
       if (!this._isTeamLeader() && this._isRelevantToTeamMember(message.content, channelId)) {
         this.interestChannels[message.channelId] = {
-          currentHandler: (_o = this.client.user) == null ? void 0 : _o.id,
+          currentHandler: this.client.user?.id,
           lastMessageSent: Date.now(),
           messages: []
         };
@@ -2223,11 +2028,11 @@ var MessageManager = class {
           unique: false,
           count: 5
         });
-        const lastSelfSortedMemories = lastSelfMemories == null ? void 0 : lastSelfMemories.filter((m) => m.userId === this.runtime.agentId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const lastSelfSortedMemories = lastSelfMemories?.filter((m) => m.userId === this.runtime.agentId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         const isRelevant = this._isRelevantToTeamMember(
           message.content,
           channelId,
-          lastSelfSortedMemories == null ? void 0 : lastSelfSortedMemories[0]
+          lastSelfSortedMemories?.[0]
         );
         if (!isRelevant) {
           delete this.interestChannels[message.channelId];
@@ -2237,13 +2042,13 @@ var MessageManager = class {
       if (isTeamRequest) {
         if (isLeader) {
           this.interestChannels[message.channelId] = {
-            currentHandler: (_p = this.client.user) == null ? void 0 : _p.id,
+            currentHandler: this.client.user?.id,
             lastMessageSent: Date.now(),
             messages: []
           };
         } else {
           this.interestChannels[message.channelId] = {
-            currentHandler: (_q = this.client.user) == null ? void 0 : _q.id,
+            currentHandler: this.client.user?.id,
             lastMessageSent: Date.now(),
             messages: []
           };
@@ -2253,16 +2058,13 @@ var MessageManager = class {
         }
       }
       const otherTeamMembers = this.runtime.character.clientConfig.discord.teamAgentIds.filter(
-        (id) => {
-          var _a2;
-          return id !== ((_a2 = this.client.user) == null ? void 0 : _a2.id);
-        }
+        (id) => id !== this.client.user?.id
       );
       const mentionedTeamMember = otherTeamMembers.find(
         (id) => message.content.includes(`<@${id}>`)
       );
       if (mentionedTeamMember) {
-        if (hasInterest || ((_r = this.interestChannels[message.channelId]) == null ? void 0 : _r.currentHandler) === ((_s = this.client.user) == null ? void 0 : _s.id)) {
+        if (hasInterest || this.interestChannels[message.channelId]?.currentHandler === this.client.user?.id) {
           delete this.interestChannels[message.channelId];
           if (!isDirectlyMentioned) {
             return;
@@ -2271,7 +2073,7 @@ var MessageManager = class {
       }
       if (isDirectlyMentioned) {
         this.interestChannels[message.channelId] = {
-          currentHandler: (_t = this.client.user) == null ? void 0 : _t.id,
+          currentHandler: this.client.user?.id,
           lastMessageSent: Date.now(),
           messages: []
         };
@@ -2289,10 +2091,7 @@ var MessageManager = class {
     try {
       const { processedContent, attachments } = await this.processMessageMedia(message);
       const audioAttachments = message.attachments.filter(
-        (attachment) => {
-          var _a2;
-          return (_a2 = attachment.contentType) == null ? void 0 : _a2.startsWith("audio/");
-        }
+        (attachment) => attachment.contentType?.startsWith("audio/")
       );
       if (audioAttachments.size > 0) {
         const processedAudioAttachments = await this.attachmentManager.processAttachments(
@@ -2319,7 +2118,7 @@ var MessageManager = class {
         attachments,
         source: "discord",
         url: message.url,
-        inReplyTo: ((_u = message.reference) == null ? void 0 : _u.messageId) ? stringToUuid(
+        inReplyTo: message.reference?.messageId ? stringToUuid(
           message.reference.messageId + "-" + this.runtime.agentId
         ) : void 0
       };
@@ -2355,7 +2154,7 @@ var MessageManager = class {
       let state = await this.runtime.composeState(userMessage, {
         discordClient: this.client,
         discordMessage: message,
-        agentName: this.runtime.character.name || ((_v = this.client.user) == null ? void 0 : _v.displayName)
+        agentName: this.runtime.character.name || this.client.user?.displayName
       });
       const canSendResult = canSendMessage(message.channel);
       if (!canSendResult.canSend) {
@@ -2386,7 +2185,7 @@ var MessageManager = class {
       if (shouldRespond) {
         const context = composeContext6({
           state,
-          template: ((_w = this.runtime.character.templates) == null ? void 0 : _w.discordMessageHandlerTemplate) || discordMessageHandlerTemplate
+          template: this.runtime.character.templates?.discordMessageHandlerTemplate || discordMessageHandlerTemplate
         });
         const stopTyping = this.simulateTyping(message);
         const responseContent = await this._generateResponse(
@@ -2396,7 +2195,7 @@ var MessageManager = class {
         ).finally(() => {
           stopTyping();
         });
-        responseContent.text = (_x = responseContent.text) == null ? void 0 : _x.trim();
+        responseContent.text = responseContent.text?.trim();
         responseContent.inReplyTo = stringToUuid(
           message.id + "-" + this.runtime.agentId
         );
@@ -2450,7 +2249,7 @@ var MessageManager = class {
           }
         };
         const action = this.runtime.actions.find((a) => a.name === responseContent.action);
-        const shouldSuppressInitialMessage = action == null ? void 0 : action.suppressInitialMessage;
+        const shouldSuppressInitialMessage = action?.suppressInitialMessage;
         let responseMessages = [];
         if (!shouldSuppressInitialMessage) {
           responseMessages = await callback(responseContent);
@@ -2481,7 +2280,7 @@ var MessageManager = class {
       if (message.channel.type === ChannelType4.GuildVoice) {
         const errorMessage = "Sorry, I had a glitch. What was that?";
         const speechService = this.runtime.getService(
-          ServiceType3.SPEECH_GENERATION
+          ServiceType2.SPEECH_GENERATION
         );
         if (!speechService) {
           throw new Error("Speech generation service not found");
@@ -2523,7 +2322,6 @@ var MessageManager = class {
     }, 5e3);
   }
   async _checkChannelActivity() {
-    var _a, _b;
     if (!this.autoPostConfig.enabled || !this.autoPostConfig.mainChannelId) return;
     const channel = this.client.channels.cache.get(this.autoPostConfig.mainChannelId);
     if (!channel) return;
@@ -2550,14 +2348,14 @@ var MessageManager = class {
           let state = await this.runtime.composeState(memory, {
             discordClient: this.client,
             discordMessage: null,
-            agentName: this.runtime.character.name || ((_a = this.client.user) == null ? void 0 : _a.displayName)
+            agentName: this.runtime.character.name || this.client.user?.displayName
           });
           const context = composeContext6({
             state,
-            template: ((_b = this.runtime.character.templates) == null ? void 0 : _b.discordAutoPostTemplate) || discordAutoPostTemplate
+            template: this.runtime.character.templates?.discordAutoPostTemplate || discordAutoPostTemplate
           });
           const responseContent = await this._generateResponse(memory, state, context);
-          if (!(responseContent == null ? void 0 : responseContent.text)) return;
+          if (!responseContent?.text) return;
           const messages2 = await sendMessageInChunks(channel, responseContent.text.trim(), null, []);
           const memories = messages2.map((m) => ({
             id: stringToUuid(m.id + "-" + this.runtime.agentId),
@@ -2599,7 +2397,6 @@ var MessageManager = class {
           const newsChannel = channel;
           try {
             newsChannel.createMessageCollector().on("collect", async (message) => {
-              var _a, _b;
               if (message.author.bot || Date.now() - message.createdTimestamp > 3e5) return;
               const mainChannel = this.client.channels.cache.get(this.autoPostConfig.mainChannelId);
               if (!mainChannel) return;
@@ -2621,16 +2418,16 @@ var MessageManager = class {
                 let state = await this.runtime.composeState(memory, {
                   discordClient: this.client,
                   discordMessage: message,
-                  announcementContent: message == null ? void 0 : message.content,
+                  announcementContent: message?.content,
                   announcementChannelId: channel.id,
-                  agentName: this.runtime.character.name || ((_a = this.client.user) == null ? void 0 : _a.displayName)
+                  agentName: this.runtime.character.name || this.client.user?.displayName
                 });
                 const context = composeContext6({
                   state,
-                  template: ((_b = this.runtime.character.templates) == null ? void 0 : _b.discordAnnouncementHypeTemplate) || discordAnnouncementHypeTemplate
+                  template: this.runtime.character.templates?.discordAnnouncementHypeTemplate || discordAnnouncementHypeTemplate
                 });
                 const responseContent = await this._generateResponse(memory, state, context);
-                if (!(responseContent == null ? void 0 : responseContent.text)) return;
+                if (!responseContent?.text) return;
                 const messages = await sendMessageInChunks(mainChannel, responseContent.text.trim(), null, []);
                 const memories = messages.map((m) => ({
                   id: stringToUuid(m.id + "-" + this.runtime.agentId),
@@ -2666,25 +2463,23 @@ var MessageManager = class {
     }
   }
   _isMessageForMe(message) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i;
-    const isMentioned = (_b = message.mentions.users) == null ? void 0 : _b.has(
-      (_a = this.client.user) == null ? void 0 : _a.id
+    const isMentioned = message.mentions.users?.has(
+      this.client.user?.id
     );
     const guild = message.guild;
-    const member = guild == null ? void 0 : guild.members.cache.get((_c = this.client.user) == null ? void 0 : _c.id);
-    const nickname = member == null ? void 0 : member.nickname;
+    const member = guild?.members.cache.get(this.client.user?.id);
+    const nickname = member?.nickname;
     const hasRoleMentionOnly = message.mentions.roles.size > 0 && !isMentioned;
-    if (hasRoleMentionOnly && ((_e = (_d = this.runtime.character.clientConfig) == null ? void 0 : _d.discord) == null ? void 0 : _e.isPartOfTeam)) {
+    if (hasRoleMentionOnly && this.runtime.character.clientConfig?.discord?.isPartOfTeam) {
       return false;
     }
-    return isMentioned || !((_g = (_f = this.runtime.character.clientConfig) == null ? void 0 : _f.discord) == null ? void 0 : _g.shouldRespondOnlyToMentions) && (message.content.toLowerCase().includes(
-      (_h = this.client.user) == null ? void 0 : _h.username.toLowerCase()
+    return isMentioned || !this.runtime.character.clientConfig?.discord?.shouldRespondOnlyToMentions && (message.content.toLowerCase().includes(
+      this.client.user?.username.toLowerCase()
     ) || message.content.toLowerCase().includes(
-      (_i = this.client.user) == null ? void 0 : _i.tag.toLowerCase()
+      this.client.user?.tag.toLowerCase()
     ) || nickname && message.content.toLowerCase().includes(nickname.toLowerCase()));
   }
   async processMessageMedia(message) {
-    var _a;
     let processedContent = message.content;
     let attachments = [];
     const codeBlockRegex = /```([\s\S]*?)```/g;
@@ -2715,55 +2510,14 @@ var MessageManager = class {
         message.attachments
       );
     }
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const urls = processedContent.match(urlRegex) || [];
-    for (const url of urls) {
-      if ((_a = this.runtime.getService(ServiceType3.VIDEO)) == null ? void 0 : _a.isVideoUrl(url)) {
-        const videoService = this.runtime.getService(
-          ServiceType3.VIDEO
-        );
-        if (!videoService) {
-          throw new Error("Video service not found");
-        }
-        const videoInfo = await videoService.processVideo(
-          url,
-          this.runtime
-        );
-        attachments.push({
-          id: `youtube-${Date.now()}`,
-          url,
-          title: videoInfo.title,
-          source: "YouTube",
-          description: videoInfo.description,
-          text: videoInfo.text
-        });
-      } else {
-        const browserService = this.runtime.getService(
-          ServiceType3.BROWSER
-        );
-        if (!browserService) {
-          throw new Error("Browser service not found");
-        }
-        const { title, description: summary } = await browserService.getPageContent(url, this.runtime);
-        attachments.push({
-          id: `webpage-${Date.now()}`,
-          url,
-          title: title || "Web Page",
-          source: "Web",
-          description: summary,
-          text: summary
-        });
-      }
-    }
     return { processedContent, attachments };
   }
   _getNormalizedUserId(id) {
     return id.toString().replace(/[^0-9]/g, "");
   }
   _isTeamMember(userId) {
-    var _a;
-    const teamConfig = (_a = this.runtime.character.clientConfig) == null ? void 0 : _a.discord;
-    if (!(teamConfig == null ? void 0 : teamConfig.isPartOfTeam) || !teamConfig.teamAgentIds) return false;
+    const teamConfig = this.runtime.character.clientConfig?.discord;
+    if (!teamConfig?.isPartOfTeam || !teamConfig.teamAgentIds) return false;
     const normalizedUserId = this._getNormalizedUserId(userId);
     const isTeamMember = teamConfig.teamAgentIds.some(
       (teamId) => this._getNormalizedUserId(teamId) === normalizedUserId
@@ -2771,20 +2525,17 @@ var MessageManager = class {
     return isTeamMember;
   }
   _isTeamLeader() {
-    var _a, _b, _c;
-    return ((_a = this.client.user) == null ? void 0 : _a.id) === ((_c = (_b = this.runtime.character.clientConfig) == null ? void 0 : _b.discord) == null ? void 0 : _c.teamLeaderId);
+    return this.client.user?.id === this.runtime.character.clientConfig?.discord?.teamLeaderId;
   }
   _isTeamCoordinationRequest(content) {
-    var _a;
     const contentLower = content.toLowerCase();
-    return (_a = TEAM_COORDINATION.KEYWORDS) == null ? void 0 : _a.some(
+    return TEAM_COORDINATION.KEYWORDS?.some(
       (keyword) => contentLower.includes(keyword.toLowerCase())
     );
   }
   _isRelevantToTeamMember(content, channelId, lastAgentMemory = null) {
-    var _a;
-    const teamConfig = (_a = this.runtime.character.clientConfig) == null ? void 0 : _a.discord;
-    if (this._isTeamLeader() && (lastAgentMemory == null ? void 0 : lastAgentMemory.content.text)) {
+    const teamConfig = this.runtime.character.clientConfig?.discord;
+    if (this._isTeamLeader() && lastAgentMemory?.content.text) {
       const timeSinceLastMessage = Date.now() - lastAgentMemory.createdAt;
       if (timeSinceLastMessage > MESSAGE_CONSTANTS.INTEREST_DECAY_TIME) {
         return false;
@@ -2795,7 +2546,7 @@ var MessageManager = class {
       );
       return similarity >= MESSAGE_CONSTANTS.DEFAULT_SIMILARITY_THRESHOLD_FOLLOW_UPS;
     }
-    if (!(teamConfig == null ? void 0 : teamConfig.teamMemberInterestKeywords)) {
+    if (!teamConfig?.teamMemberInterestKeywords) {
       return false;
     }
     return teamConfig.teamMemberInterestKeywords.some(
@@ -2809,16 +2560,15 @@ var MessageManager = class {
     const similarity = cosineSimilarity(
       currentMessage.toLowerCase(),
       previousContext.content.toLowerCase(),
-      agentLastMessage == null ? void 0 : agentLastMessage.toLowerCase()
+      agentLastMessage?.toLowerCase()
     );
     const weightedSimilarity = similarity * timeWeight;
     return weightedSimilarity;
   }
   async _shouldRespondBasedOnContext(message, channelState) {
-    var _a, _b, _c, _d, _e, _f;
     if (this._isMessageForMe(message)) return true;
-    if ((channelState == null ? void 0 : channelState.currentHandler) !== ((_a = this.client.user) == null ? void 0 : _a.id)) return false;
-    if (!((_b = channelState.messages) == null ? void 0 : _b.length)) return false;
+    if (channelState?.currentHandler !== this.client.user?.id) return false;
+    if (!channelState.messages?.length) return false;
     const lastUserMessage = [...channelState.messages].reverse().find(
       (m, index) => index > 0 && // Skip first message (current)
       m.userId !== this.runtime.agentId
@@ -2831,16 +2581,16 @@ var MessageManager = class {
       unique: false,
       count: 5
     });
-    const lastSelfSortedMemories = lastSelfMemories == null ? void 0 : lastSelfMemories.filter((m) => m.userId === this.runtime.agentId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const lastSelfSortedMemories = lastSelfMemories?.filter((m) => m.userId === this.runtime.agentId).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     const contextSimilarity = await this._analyzeContextSimilarity(
       message.content,
       {
         content: lastUserMessage.content.text || "",
         timestamp: Date.now()
       },
-      (_d = (_c = lastSelfSortedMemories == null ? void 0 : lastSelfSortedMemories[0]) == null ? void 0 : _c.content) == null ? void 0 : _d.text
+      lastSelfSortedMemories?.[0]?.content?.text
     );
-    const similarityThreshold = ((_f = (_e = this.runtime.character.clientConfig) == null ? void 0 : _e.discord) == null ? void 0 : _f.messageSimilarityThreshold) || channelState.contextSimilarityThreshold || MESSAGE_CONSTANTS.DEFAULT_SIMILARITY_THRESHOLD;
+    const similarityThreshold = this.runtime.character.clientConfig?.discord?.messageSimilarityThreshold || channelState.contextSimilarityThreshold || MESSAGE_CONSTANTS.DEFAULT_SIMILARITY_THRESHOLD;
     return contextSimilarity >= similarityThreshold;
   }
   _checkInterest(channelId) {
@@ -2863,10 +2613,7 @@ var MessageManager = class {
         channelId
       )) {
         const recentTeamResponses = channelState.messages.slice(-3).some(
-          (m) => {
-            var _a;
-            return m.userId !== ((_a = this.client.user) == null ? void 0 : _a.id) && this._isTeamMember(m.userId);
-          }
+          (m) => m.userId !== this.client.user?.id && this._isTeamMember(m.userId)
         );
         if (recentTeamResponses) {
           delete this.interestChannels[channelId];
@@ -2879,10 +2626,7 @@ var MessageManager = class {
         -MESSAGE_CONSTANTS.RECENT_MESSAGE_COUNT
       );
       const differentUsers = new Set(recentMessages.map((m) => m.userId)).size;
-      if (differentUsers > 1 && !recentMessages.some((m) => {
-        var _a;
-        return m.userId === ((_a = this.client.user) == null ? void 0 : _a.id);
-      })) {
+      if (differentUsers > 1 && !recentMessages.some((m) => m.userId === this.client.user?.id)) {
         delete this.interestChannels[channelId];
         return false;
       }
@@ -2890,19 +2634,18 @@ var MessageManager = class {
     return true;
   }
   async _shouldIgnore(message) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
-    if (message.author.id === ((_a = this.client.user) == null ? void 0 : _a.id)) return true;
-    if ((_c = (_b = this.runtime.character.clientConfig) == null ? void 0 : _b.discord) == null ? void 0 : _c.shouldRespondOnlyToMentions) {
+    if (message.author.id === this.client.user?.id) return true;
+    if (this.runtime.character.clientConfig?.discord?.shouldRespondOnlyToMentions) {
       return !this._isMessageForMe(message);
     }
-    if ((_e = (_d = this.runtime.character.clientConfig) == null ? void 0 : _d.discord) == null ? void 0 : _e.isPartOfTeam) {
+    if (this.runtime.character.clientConfig?.discord?.isPartOfTeam) {
       const authorId = this._getNormalizedUserId(message.author.id);
       if (this._isTeamLeader()) {
         if (this._isTeamCoordinationRequest(message.content)) {
           return false;
         }
         if (!this._isMessageForMe(message)) {
-          const otherMemberInterests = ((_g = (_f = this.runtime.character.clientConfig) == null ? void 0 : _f.discord) == null ? void 0 : _g.teamMemberInterestKeywords) || [];
+          const otherMemberInterests = this.runtime.character.clientConfig?.discord?.teamMemberInterestKeywords || [];
           const hasOtherInterests = otherMemberInterests.some(
             (keyword) => message.content.toLowerCase().includes(keyword.toLowerCase())
           );
@@ -2931,8 +2674,8 @@ var MessageManager = class {
         }
       }
       const channelState = this.interestChannels[message.channelId];
-      if (channelState == null ? void 0 : channelState.currentHandler) {
-        if (channelState.currentHandler === ((_h = this.client.user) == null ? void 0 : _h.id)) {
+      if (channelState?.currentHandler) {
+        if (channelState.currentHandler === this.client.user?.id) {
           if (this._isRelevantToTeamMember(
             message.content,
             message.channelId
@@ -2950,12 +2693,12 @@ var MessageManager = class {
       }
     }
     let messageContent = message.content.toLowerCase();
-    const botMention = `<@!?${(_i = this.client.user) == null ? void 0 : _i.id}>`;
+    const botMention = `<@!?${this.client.user?.id}>`;
     messageContent = messageContent.replace(
       new RegExp(botMention, "gi"),
       this.runtime.character.name.toLowerCase()
     );
-    const botUsername = (_j = this.client.user) == null ? void 0 : _j.username.toLowerCase();
+    const botUsername = this.client.user?.username.toLowerCase();
     messageContent = messageContent.replace(
       new RegExp(`\\b${botUsername}\\b`, "g"),
       this.runtime.character.name.toLowerCase()
@@ -2997,17 +2740,16 @@ var MessageManager = class {
     return false;
   }
   async _shouldRespond(message, state) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
-    if (message.author.id === ((_a = this.client.user) == null ? void 0 : _a.id)) return false;
-    if ((_c = (_b = this.runtime.character.clientConfig) == null ? void 0 : _b.discord) == null ? void 0 : _c.shouldRespondOnlyToMentions) {
+    if (message.author.id === this.client.user?.id) return false;
+    if (this.runtime.character.clientConfig?.discord?.shouldRespondOnlyToMentions) {
       return this._isMessageForMe(message);
     }
     const channelState = this.interestChannels[message.channelId];
-    if (((_e = (_d = this.runtime.character.clientConfig) == null ? void 0 : _d.discord) == null ? void 0 : _e.isPartOfTeam) && !this._isTeamLeader() && this._isRelevantToTeamMember(message.content, message.channelId)) {
+    if (this.runtime.character.clientConfig?.discord?.isPartOfTeam && !this._isTeamLeader() && this._isRelevantToTeamMember(message.content, message.channelId)) {
       return true;
     }
     try {
-      if ((_g = (_f = this.runtime.character.clientConfig) == null ? void 0 : _f.discord) == null ? void 0 : _g.isPartOfTeam) {
+      if (this.runtime.character.clientConfig?.discord?.isPartOfTeam) {
         if (this._isTeamLeader() && this._isTeamCoordinationRequest(message.content)) {
           return true;
         }
@@ -3018,15 +2760,12 @@ var MessageManager = class {
           await new Promise(
             (resolve) => setTimeout(resolve, TIMING_CONSTANTS.TEAM_MEMBER_DELAY)
           );
-          if ((_h = channelState == null ? void 0 : channelState.messages) == null ? void 0 : _h.length) {
+          if (channelState?.messages?.length) {
             const recentMessages = channelState.messages.slice(
               -MESSAGE_CONSTANTS.RECENT_MESSAGE_COUNT
             );
             const leaderResponded = recentMessages.some(
-              (m) => {
-                var _a2, _b2;
-                return m.userId === ((_b2 = (_a2 = this.runtime.character.clientConfig) == null ? void 0 : _a2.discord) == null ? void 0 : _b2.teamLeaderId) && Date.now() - channelState.lastMessageSent < 3e3;
-              }
+              (m) => m.userId === this.runtime.character.clientConfig?.discord?.teamLeaderId && Date.now() - channelState.lastMessageSent < 3e3
             );
             if (leaderResponded) {
               return Math.random() > RESPONSE_CHANCES.AFTER_LEADER;
@@ -3044,15 +2783,12 @@ var MessageManager = class {
           await new Promise(
             (resolve) => setTimeout(resolve, randomDelay)
           );
-          if ((_i = channelState == null ? void 0 : channelState.messages) == null ? void 0 : _i.length) {
+          if (channelState?.messages?.length) {
             const recentResponses = channelState.messages.slice(
               -MESSAGE_CONSTANTS.RECENT_MESSAGE_COUNT
             );
             const otherTeamMemberResponded = recentResponses.some(
-              (m) => {
-                var _a2;
-                return m.userId !== ((_a2 = this.client.user) == null ? void 0 : _a2.id) && this._isTeamMember(m.userId);
-              }
+              (m) => m.userId !== this.client.user?.id && this._isTeamMember(m.userId)
             );
             if (otherTeamMemberResponded) {
               return false;
@@ -3062,13 +2798,13 @@ var MessageManager = class {
         if (this._isMessageForMe(message)) {
           const channelState2 = this.interestChannels[message.channelId];
           if (channelState2) {
-            channelState2.currentHandler = (_j = this.client.user) == null ? void 0 : _j.id;
+            channelState2.currentHandler = this.client.user?.id;
             channelState2.lastMessageSent = Date.now();
           }
           return true;
         }
-        if (channelState == null ? void 0 : channelState.currentHandler) {
-          if (channelState.currentHandler !== ((_k = this.client.user) == null ? void 0 : _k.id) && this._isTeamMember(channelState.currentHandler)) {
+        if (channelState?.currentHandler) {
+          if (channelState.currentHandler !== this.client.user?.id && this._isTeamMember(channelState.currentHandler)) {
             return false;
           }
         }
@@ -3077,10 +2813,7 @@ var MessageManager = class {
             -MESSAGE_CONSTANTS.CHAT_HISTORY_COUNT
           );
           const ourMessageCount = recentMessages.filter(
-            (m) => {
-              var _a2;
-              return m.userId === ((_a2 = this.client.user) == null ? void 0 : _a2.id);
-            }
+            (m) => m.userId === this.client.user?.id
           ).length;
           if (ourMessageCount > 2) {
             const responseChance = Math.pow(
@@ -3100,18 +2833,18 @@ var MessageManager = class {
         channelId: message.channelId
       });
     }
-    if (channelState == null ? void 0 : channelState.previousContext) {
+    if (channelState?.previousContext) {
       const shouldRespondContext2 = await this._shouldRespondBasedOnContext(message, channelState);
       if (!shouldRespondContext2) {
         delete this.interestChannels[message.channelId];
         return false;
       }
     }
-    if (message.mentions.has((_l = this.client.user) == null ? void 0 : _l.id)) return true;
+    if (message.mentions.has(this.client.user?.id)) return true;
     const guild = message.guild;
-    const member = guild == null ? void 0 : guild.members.cache.get((_m = this.client.user) == null ? void 0 : _m.id);
-    const nickname = member == null ? void 0 : member.nickname;
-    if (message.content.toLowerCase().includes((_n = this.client.user) == null ? void 0 : _n.username.toLowerCase()) || message.content.toLowerCase().includes((_o = this.client.user) == null ? void 0 : _o.tag.toLowerCase()) || nickname && message.content.toLowerCase().includes(nickname.toLowerCase())) {
+    const member = guild?.members.cache.get(this.client.user?.id);
+    const nickname = member?.nickname;
+    if (message.content.toLowerCase().includes(this.client.user?.username.toLowerCase()) || message.content.toLowerCase().includes(this.client.user?.tag.toLowerCase()) || nickname && message.content.toLowerCase().includes(nickname.toLowerCase())) {
       return true;
     }
     if (!message.guild) {
@@ -3119,7 +2852,7 @@ var MessageManager = class {
     }
     const shouldRespondContext = composeContext6({
       state,
-      template: ((_p = this.runtime.character.templates) == null ? void 0 : _p.discordShouldRespondTemplate) || ((_q = this.runtime.character.templates) == null ? void 0 : _q.shouldRespondTemplate) || composeRandomUser(discordShouldRespondTemplate, 2)
+      template: this.runtime.character.templates?.discordShouldRespondTemplate || this.runtime.character.templates?.shouldRespondTemplate || composeRandomUser(discordShouldRespondTemplate, 2)
     });
     const response = await generateShouldRespond({
       runtime: this.runtime,
@@ -3209,13 +2942,13 @@ import {
 } from "discord.js";
 var channelStateProvider = {
   get: async (runtime, message, state) => {
-    const discordMessage = (state == null ? void 0 : state.discordMessage) || (state == null ? void 0 : state.discordChannel);
+    const discordMessage = state?.discordMessage || state?.discordChannel;
     if (!discordMessage) {
       return "";
     }
-    const guild = discordMessage == null ? void 0 : discordMessage.guild;
-    const agentName = (state == null ? void 0 : state.agentName) || "The agent";
-    const senderName = (state == null ? void 0 : state.senderName) || "someone";
+    const guild = discordMessage?.guild;
+    const agentName = state?.agentName || "The agent";
+    const senderName = state?.senderName || "someone";
     if (!guild) {
       return agentName + " is currently in a direct message conversation with " + senderName;
     }
@@ -3240,16 +2973,15 @@ import { getVoiceConnection as getVoiceConnection2 } from "@discordjs/voice";
 import { ChannelType as ChannelType6 } from "discord.js";
 var voiceStateProvider = {
   get: async (runtime, message, state) => {
-    var _a, _b, _c, _d, _e;
-    const discordMessage = (state == null ? void 0 : state.discordMessage) || state.discordChannel;
+    const discordMessage = state?.discordMessage || state.discordChannel;
     const connection = getVoiceConnection2(
-      (_a = discordMessage == null ? void 0 : discordMessage.guild) == null ? void 0 : _a.id
+      discordMessage?.guild?.id
     );
-    const agentName = (state == null ? void 0 : state.agentName) || "The agent";
+    const agentName = state?.agentName || "The agent";
     if (!connection) {
       return agentName + " is not currently in a voice channel";
     }
-    const channel = (_e = (_d = (_c = (_b = (state == null ? void 0 : state.discordMessage) || state.discordChannel) == null ? void 0 : _b.guild) == null ? void 0 : _c.channels) == null ? void 0 : _d.cache) == null ? void 0 : _e.get(
+    const channel = (state?.discordMessage || state.discordChannel)?.guild?.channels?.cache?.get(
       connection.joinConfig.channelId
     );
     if (!channel || channel.type !== ChannelType6.GuildVoice) {
@@ -3263,7 +2995,7 @@ var voiceState_default = voiceStateProvider;
 // src/voice.ts
 import {
   ModelClass as ModelClass9,
-  ServiceType as ServiceType4,
+  ServiceType as ServiceType3,
   composeContext as composeContext7,
   composeRandomUser as composeRandomUser2,
   elizaLogger as elizaLogger3,
@@ -3377,12 +3109,11 @@ var VoiceManager = class extends EventEmitter {
     this.runtime = client.runtime;
   }
   async handleVoiceStateUpdate(oldState, newState) {
-    var _a;
     const oldChannelId = oldState.channelId;
     const newChannelId = newState.channelId;
     const member = newState.member;
     if (!member) return;
-    if (member.id === ((_a = this.client.user) == null ? void 0 : _a.id)) {
+    if (member.id === this.client.user?.id) {
       return;
     }
     if (oldChannelId === newChannelId) {
@@ -3472,7 +3203,7 @@ var VoiceManager = class extends EventEmitter {
       });
       this.connections.set(channel.id, connection);
       const me = channel.guild.members.me;
-      if ((me == null ? void 0 : me.voice) && me.permissions.has("DeafenMembers")) {
+      if (me?.voice && me.permissions.has("DeafenMembers")) {
         try {
           await me.voice.setDeaf(false);
           await me.voice.setMute(false);
@@ -3481,7 +3212,6 @@ var VoiceManager = class extends EventEmitter {
         }
       }
       connection.receiver.speaking.on("start", async (userId) => {
-        var _a;
         let user = channel.members.get(userId);
         if (!user) {
           try {
@@ -3490,16 +3220,15 @@ var VoiceManager = class extends EventEmitter {
             console.error("Failed to fetch user:", error);
           }
         }
-        if (user && !(user == null ? void 0 : user.user.bot)) {
+        if (user && !user?.user.bot) {
           this.monitorMember(user, channel);
-          (_a = this.streams.get(userId)) == null ? void 0 : _a.emit("speakingStarted");
+          this.streams.get(userId)?.emit("speakingStarted");
         }
       });
       connection.receiver.speaking.on("end", async (userId) => {
-        var _a;
         const user = channel.members.get(userId);
-        if (!(user == null ? void 0 : user.user.bot)) {
-          (_a = this.streams.get(userId)) == null ? void 0 : _a.emit("speakingStopped");
+        if (!user?.user.bot) {
+          this.streams.get(userId)?.emit("speakingStopped");
         }
       });
     } catch (error) {
@@ -3520,12 +3249,11 @@ var VoiceManager = class extends EventEmitter {
     return connection;
   }
   async monitorMember(member, channel) {
-    var _a, _b, _c;
-    const userId = member == null ? void 0 : member.id;
-    const userName = (_a = member == null ? void 0 : member.user) == null ? void 0 : _a.username;
-    const name = (_b = member == null ? void 0 : member.user) == null ? void 0 : _b.displayName;
-    const connection = this.getVoiceConnection((_c = member == null ? void 0 : member.guild) == null ? void 0 : _c.id);
-    const receiveStream = connection == null ? void 0 : connection.receiver.subscribe(userId, {
+    const userId = member?.id;
+    const userName = member?.user?.username;
+    const name = member?.user?.displayName;
+    const connection = this.getVoiceConnection(member?.guild?.id);
+    const receiveStream = connection?.receiver.subscribe(userId, {
       autoDestroy: true,
       emitClose: true
     });
@@ -3578,19 +3306,19 @@ var VoiceManager = class extends EventEmitter {
       console.log(`Opus decoding error: ${err}`);
     };
     const streamCloseHandler = () => {
-      console.log(`voice stream from ${member == null ? void 0 : member.displayName} closed`);
+      console.log(`voice stream from ${member?.displayName} closed`);
       this.streams.delete(userId);
       this.connections.delete(userId);
     };
     const closeHandler = () => {
-      console.log(`Opus decoder for ${member == null ? void 0 : member.displayName} closed`);
+      console.log(`Opus decoder for ${member?.displayName} closed`);
       opusDecoder.removeListener("error", errorHandler);
       opusDecoder.removeListener("close", closeHandler);
-      receiveStream == null ? void 0 : receiveStream.removeListener("close", streamCloseHandler);
+      receiveStream?.removeListener("close", streamCloseHandler);
     };
     opusDecoder.on("error", errorHandler);
     opusDecoder.on("close", closeHandler);
-    receiveStream == null ? void 0 : receiveStream.on("close", streamCloseHandler);
+    receiveStream?.on("close", streamCloseHandler);
     this.client.emit(
       "userStream",
       userId,
@@ -3601,14 +3329,13 @@ var VoiceManager = class extends EventEmitter {
     );
   }
   leaveChannel(channel) {
-    var _a;
     const connection = this.connections.get(channel.id);
     if (connection) {
       connection.destroy();
       this.connections.delete(channel.id);
     }
     for (const [memberId, monitorInfo] of this.activeMonitors) {
-      if (monitorInfo.channel.id === channel.id && memberId !== ((_a = this.client.user) == null ? void 0 : _a.id)) {
+      if (monitorInfo.channel.id === channel.id && memberId !== this.client.user?.id) {
         this.stopMonitoringMember(memberId);
       }
     }
@@ -3627,9 +3354,8 @@ var VoiceManager = class extends EventEmitter {
     console.log(`Joined guild ${guild.name}`);
   }
   async debouncedProcessTranscription(userId, name, userName, channel) {
-    var _a, _b;
     const DEBOUNCE_TRANSCRIPTION_THRESHOLD = 1500;
-    if (((_b = (_a = this.activeAudioPlayer) == null ? void 0 : _a.state) == null ? void 0 : _b.status) === "idle") {
+    if (this.activeAudioPlayer?.state?.status === "idle") {
       elizaLogger3.log("Cleaning up idle audio player.");
       this.cleanupAudioPlayer(this.activeAudioPlayer);
     }
@@ -3720,7 +3446,7 @@ var VoiceManager = class extends EventEmitter {
       state.totalLength = 0;
       const wavBuffer = await this.convertOpusToWav(inputBuffer);
       console.log("Starting transcription...");
-      const transcriptionText = await this.runtime.getService(ServiceType4.TRANSCRIPTION).transcribe(wavBuffer);
+      const transcriptionText = await this.runtime.getService(ServiceType3.TRANSCRIPTION).transcribe(wavBuffer);
       if (transcriptionText && isValidTranscription(transcriptionText)) {
         state.transcriptionText += transcriptionText;
       }
@@ -3745,7 +3471,6 @@ var VoiceManager = class extends EventEmitter {
     }
   }
   async handleUserMessage(message, userId, channelId, channel, name, userName) {
-    var _a, _b;
     try {
       const roomId = stringToUuid2(channelId + "-" + this.runtime.agentId);
       const userIdUUID = stringToUuid2(userId);
@@ -3805,7 +3530,7 @@ var VoiceManager = class extends EventEmitter {
       }
       const context = composeContext7({
         state,
-        template: ((_a = this.runtime.character.templates) == null ? void 0 : _a.discordVoiceHandlerTemplate) || ((_b = this.runtime.character.templates) == null ? void 0 : _b.messageHandlerTemplate) || discordVoiceHandlerTemplate
+        template: this.runtime.character.templates?.discordVoiceHandlerTemplate || this.runtime.character.templates?.messageHandlerTemplate || discordVoiceHandlerTemplate
       });
       const responseContent = await this._generateResponse(
         memory,
@@ -3813,7 +3538,6 @@ var VoiceManager = class extends EventEmitter {
         context
       );
       const callback = async (content2) => {
-        var _a2;
         console.log("callback content: ", content2);
         const { roomId: roomId2 } = memory;
         const responseMemory = {
@@ -3830,13 +3554,13 @@ var VoiceManager = class extends EventEmitter {
           roomId: roomId2,
           embedding: getEmbeddingZeroVector2()
         };
-        if ((_a2 = responseMemory.content.text) == null ? void 0 : _a2.trim()) {
+        if (responseMemory.content.text?.trim()) {
           await this.runtime.messageManager.createMemory(
             responseMemory
           );
           state = await this.runtime.updateRecentMessageState(state);
           const responseStream = await this.runtime.getService(
-            ServiceType4.SPEECH_GENERATION
+            ServiceType3.SPEECH_GENERATION
           ).generate(this.runtime, content2.text);
           if (responseStream) {
             await this.playAudioStream(
@@ -3881,16 +3605,15 @@ var VoiceManager = class extends EventEmitter {
     }
   }
   async _shouldRespond(message, userId, channel, state) {
-    var _a, _b, _c, _d, _e;
-    if (userId === ((_a = this.client.user) == null ? void 0 : _a.id)) return false;
+    if (userId === this.client.user?.id) return false;
     const lowerMessage = message.toLowerCase();
     const botName = this.client.user.username.toLowerCase();
     const characterName = this.runtime.character.name.toLowerCase();
     const guild = channel.guild;
-    const member = guild == null ? void 0 : guild.members.cache.get((_b = this.client.user) == null ? void 0 : _b.id);
-    const nickname = member == null ? void 0 : member.nickname;
+    const member = guild?.members.cache.get(this.client.user?.id);
+    const nickname = member?.nickname;
     if (lowerMessage.includes(botName) || lowerMessage.includes(characterName) || lowerMessage.includes(
-      (_c = this.client.user) == null ? void 0 : _c.tag.toLowerCase()
+      this.client.user?.tag.toLowerCase()
     ) || nickname && lowerMessage.includes(nickname.toLowerCase())) {
       return true;
     }
@@ -3899,7 +3622,7 @@ var VoiceManager = class extends EventEmitter {
     }
     const shouldRespondContext = composeContext7({
       state,
-      template: ((_d = this.runtime.character.templates) == null ? void 0 : _d.discordShouldRespondTemplate) || ((_e = this.runtime.character.templates) == null ? void 0 : _e.shouldRespondTemplate) || composeRandomUser2(discordShouldRespondTemplate, 2)
+      template: this.runtime.character.templates?.discordShouldRespondTemplate || this.runtime.character.templates?.shouldRespondTemplate || composeRandomUser2(discordShouldRespondTemplate, 2)
     });
     const response = await generateShouldRespond2({
       runtime: this.runtime,
@@ -3941,7 +3664,6 @@ var VoiceManager = class extends EventEmitter {
     return response;
   }
   async _shouldIgnore(message) {
-    var _a;
     elizaLogger3.debug("message.content: ", message.content);
     if (message.content.text.length < 3) {
       return true;
@@ -3969,19 +3691,13 @@ var VoiceManager = class extends EventEmitter {
       "sexy"
     ];
     if (message.content.text.length < 50 && loseInterestWords.some(
-      (word) => {
-        var _a2;
-        return (_a2 = message.content.text) == null ? void 0 : _a2.toLowerCase().includes(word);
-      }
+      (word) => message.content.text?.toLowerCase().includes(word)
     )) {
       return true;
     }
     const ignoreWords = ["k", "ok", "bye", "lol", "nm", "uh"];
-    if (((_a = message.content.text) == null ? void 0 : _a.length) < 8 && ignoreWords.some(
-      (word) => {
-        var _a2;
-        return (_a2 = message.content.text) == null ? void 0 : _a2.toLowerCase().includes(word);
-      }
+    if (message.content.text?.length < 8 && ignoreWords.some(
+      (word) => message.content.text?.toLowerCase().includes(word)
     )) {
       return true;
     }
@@ -3995,13 +3711,13 @@ var VoiceManager = class extends EventEmitter {
       );
       if (channelId) {
         const channel = await guild.channels.fetch(channelId);
-        if (channel == null ? void 0 : channel.isVoiceBased()) {
+        if (channel?.isVoiceBased()) {
           chosenChannel = channel;
         }
       }
       if (!chosenChannel) {
         const channels = (await guild.channels.fetch()).filter(
-          (channel) => (channel == null ? void 0 : channel.type) == ChannelType7.GuildVoice
+          (channel) => channel?.type == ChannelType7.GuildVoice
         );
         for (const [, channel] of channels) {
           const voiceChannel = channel;
@@ -4063,10 +3779,9 @@ var VoiceManager = class extends EventEmitter {
     }
   }
   async handleJoinChannelCommand(interaction) {
-    var _a;
     try {
       await interaction.deferReply();
-      const channelId = (_a = interaction.options.get("channel")) == null ? void 0 : _a.value;
+      const channelId = interaction.options.get("channel")?.value;
       if (!channelId) {
         await interaction.editReply(
           "Please provide a voice channel to join."
@@ -4190,8 +3905,7 @@ var DiscordClient = class extends EventEmitter2 {
     }
   }
   async onClientReady(readyClient) {
-    var _a, _b, _c;
-    elizaLogger4.success(`Logged in as ${(_a = readyClient.user) == null ? void 0 : _a.tag}`);
+    elizaLogger4.success(`Logged in as ${readyClient.user?.tag}`);
     const commands = [
       {
         name: "joinchannel",
@@ -4214,7 +3928,7 @@ var DiscordClient = class extends EventEmitter2 {
       }
     ];
     try {
-      await ((_b = this.client.application) == null ? void 0 : _b.commands.set(commands));
+      await this.client.application?.commands.set(commands);
       elizaLogger4.success("Slash commands registered");
     } catch (error) {
       console.error("Error registering slash commands:", error);
@@ -4242,12 +3956,11 @@ var DiscordClient = class extends EventEmitter2 {
     ].reduce((a, b) => a | b, 0n);
     elizaLogger4.success("Use this URL to add the bot to your server:");
     elizaLogger4.success(
-      `https://discord.com/api/oauth2/authorize?client_id=${(_c = readyClient.user) == null ? void 0 : _c.id}&permissions=${requiredPermissions}&scope=bot%20applications.commands`
+      `https://discord.com/api/oauth2/authorize?client_id=${readyClient.user?.id}&permissions=${requiredPermissions}&scope=bot%20applications.commands`
     );
     await this.onReady();
   }
   async handleReactionAdd(reaction, user) {
-    var _a, _b;
     try {
       elizaLogger4.log("Reaction added");
       if (!reaction || !user) {
@@ -4289,8 +4002,8 @@ var DiscordClient = class extends EventEmitter2 {
       const messageContent = reaction.message.content || "";
       const truncatedContent = messageContent.length > 100 ? `${messageContent.substring(0, 100)}...` : messageContent;
       const reactionMessage = `*<${emoji}>: "${truncatedContent}"*`;
-      const userName = ((_a = reaction.message.author) == null ? void 0 : _a.username) || "unknown";
-      const name = ((_b = reaction.message.author) == null ? void 0 : _b.displayName) || userName;
+      const userName = reaction.message.author?.username || "unknown";
+      const name = reaction.message.author?.displayName || userName;
       await this.runtime.ensureConnection(
         userIdUUID,
         roomId,

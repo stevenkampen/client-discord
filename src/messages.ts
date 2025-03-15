@@ -17,9 +17,9 @@ import {
 import { stringToUuid, getEmbeddingZeroVector } from "@elizaos/core";
 import {
     ChannelType,
+    TextChannel,
     type Client,
     type Message as DiscordMessage,
-    type TextChannel,
 } from "discord.js";
 import { elizaLogger } from "@elizaos/core";
 import { AttachmentManager } from "./attachments.ts";
@@ -864,57 +864,6 @@ export class MessageManager {
             );
         }
 
-        // TODO: Move to attachments manager
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        const urls = processedContent.match(urlRegex) || [];
-
-        for (const url of urls) {
-            if (
-                this.runtime
-                    .getService<IVideoService>(ServiceType.VIDEO)
-                    ?.isVideoUrl(url)
-            ) {
-                const videoService = this.runtime.getService<IVideoService>(
-                    ServiceType.VIDEO
-                );
-                if (!videoService) {
-                    throw new Error("Video service not found");
-                }
-                const videoInfo = await videoService.processVideo(
-                    url,
-                    this.runtime
-                );
-
-                attachments.push({
-                    id: `youtube-${Date.now()}`,
-                    url: url,
-                    title: videoInfo.title,
-                    source: "YouTube",
-                    description: videoInfo.description,
-                    text: videoInfo.text,
-                });
-            } else {
-                const browserService = this.runtime.getService<IBrowserService>(
-                    ServiceType.BROWSER
-                );
-                if (!browserService) {
-                    throw new Error("Browser service not found");
-                }
-
-                const { title, description: summary } =
-                    await browserService.getPageContent(url, this.runtime);
-
-                attachments.push({
-                    id: `webpage-${Date.now()}`,
-                    url: url,
-                    title: title || "Web Page",
-                    source: "Web",
-                    description: summary,
-                    text: summary,
-                });
-            }
-        }
-
         return { processedContent, attachments };
     }
 
@@ -1595,7 +1544,7 @@ export class MessageManager {
 
         const typingLoop = async () => {
             while (typing) {
-                await message.channel.sendTyping();
+                await (message.channel as TextChannel).sendTyping();
                 await new Promise((resolve) => setTimeout(resolve, 3000));
             }
         };
