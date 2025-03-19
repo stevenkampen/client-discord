@@ -23,7 +23,6 @@ import {
 } from "discord.js";
 import { elizaLogger } from "@elizaos/core";
 import { AttachmentManager } from "./attachments.ts";
-import type { VoiceManager } from "./voice.ts";
 import {
     discordShouldRespondTemplate,
     discordMessageHandlerTemplate,
@@ -76,15 +75,13 @@ export class MessageManager {
     private attachmentManager: AttachmentManager;
     private interestChannels: InterestChannels = {};
     private discordClient: any;
-    private voiceManager: VoiceManager;
     //Auto post
     private autoPostConfig: AutoPostConfig;
     private lastChannelActivity: { [channelId: string]: number } = {};
     private autoPostInterval: NodeJS.Timeout;
 
-    constructor(discordClient: any, voiceManager: VoiceManager) {
+    constructor(discordClient: any) {
         this.client = discordClient.client;
-        this.voiceManager = voiceManager;
         this.discordClient = discordClient;
         this.runtime = discordClient.runtime;
         this.attachmentManager = new AttachmentManager(this.runtime);
@@ -552,7 +549,6 @@ export class MessageManager {
                     this.runtime,
                     errorMessage
                 );
-                await this.voiceManager.playAudioStream(userId, audioStream);
             } else {
                 // For text channels, send the error message
                 console.error("Error sending message:", error);

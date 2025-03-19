@@ -1,8 +1,8 @@
 // src/client.ts
 import {
-  getEmbeddingZeroVector as getEmbeddingZeroVector3,
-  stringToUuid as stringToUuid3,
-  elizaLogger as elizaLogger4
+  getEmbeddingZeroVector as getEmbeddingZeroVector2,
+  stringToUuid as stringToUuid2,
+  elizaLogger as elizaLogger3
 } from "@elizaos/core";
 import {
   Client,
@@ -10,7 +10,7 @@ import {
   GatewayIntentBits,
   Partials
 } from "discord.js";
-import { EventEmitter as EventEmitter2 } from "events";
+import { EventEmitter } from "events";
 
 // src/actions/chat_with_attachments.ts
 import { composeContext, getModelSettings } from "@elizaos/core";
@@ -433,482 +433,13 @@ var download_media_default = {
   ]
 };
 
-// src/actions/joinvoice.ts
-import {
-  composeContext as composeContext3,
-  generateText as generateText3,
-  ModelClass as ModelClass3
-} from "@elizaos/core";
-import {
-  ChannelType
-} from "discord.js";
-import { joinVoiceChannel } from "@discordjs/voice";
-var joinvoice_default = {
-  name: "JOIN_VOICE",
-  similes: [
-    "JOIN_VOICE",
-    "JOIN_VC",
-    "JOIN_VOICE_CHAT",
-    "JOIN_VOICE_CHANNEL",
-    "JOIN_MEETING",
-    "JOIN_CALL"
-  ],
-  validate: async (_runtime, message, state) => {
-    if (message.content.source !== "discord") {
-      return false;
-    }
-    if (!state.discordClient) {
-      return;
-    }
-    const keywords = [
-      "join",
-      "come to",
-      "come on",
-      "enter",
-      "voice",
-      "chat",
-      "talk",
-      "call",
-      "hop on",
-      "get on",
-      "vc",
-      "meeting",
-      "discussion"
-    ];
-    if (!keywords.some(
-      (keyword) => message.content.text.toLowerCase().includes(keyword)
-    )) {
-      return false;
-    }
-    return true;
-  },
-  description: "Join a voice channel to participate in voice chat.",
-  handler: async (runtime, message, state) => {
-    if (!state) {
-      console.error("State is not available.");
-    }
-    const discordMessage = state.discordChannel || state.discordMessage;
-    if (!discordMessage.content) {
-      discordMessage.content = message.content.text;
-    }
-    const id = discordMessage.guild?.id;
-    const client = state.discordClient;
-    const voiceChannels = client.guilds.cache.get(id).channels.cache.filter(
-      (channel) => channel.type === ChannelType.GuildVoice
-    );
-    const messageContent = discordMessage.content;
-    const targetChannel = voiceChannels.find((channel) => {
-      const name = channel.name.toLowerCase();
-      const replacedName = name.replace(/[^a-z0-9 ]/g, "");
-      return name.includes(messageContent) || messageContent.includes(name) || replacedName.includes(messageContent) || messageContent.includes(replacedName);
-    });
-    if (targetChannel) {
-      joinVoiceChannel({
-        channelId: targetChannel.id,
-        guildId: discordMessage.guild?.id,
-        adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
-        selfDeaf: false,
-        selfMute: false,
-        group: client.user.id
-      });
-      return true;
-    } else {
-      const member = discordMessage.member;
-      if (member?.voice?.channel) {
-        joinVoiceChannel({
-          channelId: member.voice.channel.id,
-          guildId: discordMessage.guild?.id,
-          adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
-          selfDeaf: false,
-          selfMute: false,
-          group: client.user.id
-        });
-        return true;
-      }
-      const messageTemplate = `
-The user has requested to join a voice channel.
-Here is the list of channels available in the server:
-{{voiceChannels}}
-
-Here is the user's request:
-{{userMessage}}
-
-Please respond with the name of the voice channel which the bot should join. Try to infer what channel the user is talking about. If the user didn't specify a voice channel, respond with "none".
-You should only respond with the name of the voice channel or none, no commentary or additional information should be included.
-`;
-      const guessState = {
-        userMessage: message.content.text,
-        voiceChannels: voiceChannels.map((channel) => channel.name).join("\n")
-      };
-      const context = composeContext3({
-        template: messageTemplate,
-        state: guessState
-      });
-      const _datestr = (/* @__PURE__ */ new Date()).toUTCString().replace(/:/g, "-");
-      const responseContent = await generateText3({
-        runtime,
-        context,
-        modelClass: ModelClass3.SMALL
-      });
-      runtime.databaseAdapter.log({
-        body: { message, context, response: responseContent },
-        userId: message.userId,
-        roomId: message.roomId,
-        type: "joinvoice"
-      });
-      if (responseContent && responseContent.trim().length > 0) {
-        const channelName = responseContent.toLowerCase();
-        const targetChannel2 = voiceChannels.find((channel) => {
-          const name = channel.name.toLowerCase();
-          const replacedName = name.replace(/[^a-z0-9 ]/g, "");
-          return name.includes(channelName) || channelName.includes(name) || replacedName.includes(channelName) || channelName.includes(replacedName);
-        });
-        if (targetChannel2) {
-          joinVoiceChannel({
-            channelId: targetChannel2.id,
-            guildId: discordMessage.guild?.id,
-            adapterCreator: client.guilds.cache.get(id).voiceAdapterCreator,
-            selfDeaf: false,
-            selfMute: false,
-            group: client.user.id
-          });
-          return true;
-        }
-      }
-      await discordMessage.reply(
-        "I couldn't figure out which channel you wanted me to join."
-      );
-      return false;
-    }
-  },
-  examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Hey, let's jump into the 'General' voice and chat"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Sounds good",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "{{user2}}, can you join the vc, I want to discuss our strat"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Sure I'll join right now",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "hey {{user2}}, we're having a team meeting in the 'conference' voice channel, plz join us"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "OK see you there",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "{{user2}}, let's have a quick voice chat in the 'Lounge' channel."
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "kk be there in a sec",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Hey {{user2}}, can you join me in the 'Music' voice channel"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Sure",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "join voice chat with us {{user2}}"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "coming",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "hop in vc {{user2}}"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "joining now",
-          action: "JOIN_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "get in vc with us {{user2}}"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "im in",
-          action: "JOIN_VOICE"
-        }
-      }
-    ]
-  ]
-};
-
-// src/actions/leavevoice.ts
-import { getVoiceConnection } from "@discordjs/voice";
-import {
-  ChannelType as ChannelType2
-} from "discord.js";
-var leavevoice_default = {
-  name: "LEAVE_VOICE",
-  similes: [
-    "LEAVE_VOICE",
-    "LEAVE_VC",
-    "LEAVE_VOICE_CHAT",
-    "LEAVE_VOICE_CHANNEL",
-    "LEAVE_MEETING",
-    "LEAVE_CALL"
-  ],
-  validate: async (runtime, message, state) => {
-    if (message.content.source !== "discord") {
-      return false;
-    }
-    if (!state.discordClient) {
-      return false;
-    }
-    const keywords = [
-      "leave",
-      "exit",
-      "stop",
-      "quit",
-      "get off",
-      "get out",
-      "bye",
-      "cya",
-      "see you",
-      "hop off",
-      "get off",
-      "voice",
-      "vc",
-      "chat",
-      "call",
-      "meeting",
-      "discussion"
-    ];
-    if (!keywords.some(
-      (keyword) => message.content.text.toLowerCase().includes(keyword)
-    )) {
-      return false;
-    }
-    const client = state.discordClient;
-    const isConnectedToVoice = client.voice.adapters.size > 0;
-    return isConnectedToVoice;
-  },
-  description: "Leave the current voice channel.",
-  handler: async (runtime, message, state) => {
-    if (!state.discordClient) {
-      return;
-    }
-    const discordMessage = state.discordMessage || state.discordChannel;
-    if (!discordMessage) {
-      throw new Error("Discord message is not available in the state.");
-    }
-    const voiceChannels = state.discordClient?.guilds.cache.get(discordMessage.guild?.id)?.channels.cache.filter(
-      (channel) => channel.type === ChannelType2.GuildVoice
-    );
-    voiceChannels?.forEach((_channel) => {
-      const connection = getVoiceConnection(
-        discordMessage.guild?.id
-      );
-      if (connection) {
-        connection.destroy();
-      }
-    });
-    return true;
-  },
-  examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Hey {{user2}} please leave the voice channel"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Sure",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "I have to go now but thanks for the chat"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "You too, talk to you later",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Great call everyone, hopping off now",
-          action: "LEAVE_VOICE"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Agreed, I'll hop off too",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Hey {{user2}} I need you to step away from the voice chat for a bit"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "No worries, I'll leave the voice channel",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "{{user2}}, I think we covered everything, you can leave the voice chat now"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Sounds good, see you both later",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "leave voice {{user2}}"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "ok leaving",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "plz leave the voice chat {{user2}}"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "aight im out",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "yo {{user2}} gtfo the vc"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "sorry, talk to you later",
-          action: "LEAVE_VOICE"
-        }
-      }
-    ]
-  ]
-};
-
 // src/actions/summarize_conversation.ts
-import { composeContext as composeContext4, getModelSettings as getModelSettings2 } from "@elizaos/core";
-import { generateText as generateText4, splitChunks, trimTokens as trimTokens2 } from "@elizaos/core";
+import { composeContext as composeContext3, getModelSettings as getModelSettings2 } from "@elizaos/core";
+import { generateText as generateText3, splitChunks, trimTokens as trimTokens2 } from "@elizaos/core";
 import { getActorDetails } from "@elizaos/core";
 import { parseJSONObjectFromText as parseJSONObjectFromText3 } from "@elizaos/core";
 import {
-  ModelClass as ModelClass4
+  ModelClass as ModelClass3
 } from "@elizaos/core";
 var summarizationTemplate2 = `# Summarized so far (we are adding to this)
 {{currentSummary}}
@@ -939,15 +470,15 @@ Your response must be formatted as a JSON block with this structure:
 `;
 var getDateRange = async (runtime, message, state) => {
   state = await runtime.composeState(message);
-  const context = composeContext4({
+  const context = composeContext3({
     state,
     template: dateRangeTemplate
   });
   for (let i = 0; i < 5; i++) {
-    const response = await generateText4({
+    const response = await generateText3({
       runtime,
       context,
-      modelClass: ModelClass4.SMALL
+      modelClass: ModelClass3.SMALL
     });
     console.log("response", response);
     const parsedResponse = parseJSONObjectFromText3(response);
@@ -1082,7 +613,7 @@ ${attachments}`;
     let currentSummary = "";
     const modelSettings = getModelSettings2(
       runtime.character.modelProvider,
-      ModelClass4.SMALL
+      ModelClass3.SMALL
     );
     const chunkSize = modelSettings.maxOutputTokens - 1e3;
     const chunks = await splitChunks(formattedMemories, chunkSize, 0);
@@ -1098,15 +629,15 @@ ${attachments}`;
         chunkSize + 500,
         runtime
       );
-      const context = composeContext4({
+      const context = composeContext3({
         state,
         // make sure it fits, we can pad the tokens a bit
         template
       });
-      const summary = await generateText4({
+      const summary = await generateText3({
         runtime,
         context,
-        modelClass: ModelClass4.SMALL
+        modelClass: ModelClass3.SMALL
       });
       currentSummary = currentSummary + "\n" + summary;
     }
@@ -1211,11 +742,11 @@ ${currentSummary.trim()}
 var summarize_conversation_default = summarizeAction2;
 
 // src/actions/transcribe_media.ts
-import { composeContext as composeContext5 } from "@elizaos/core";
-import { generateText as generateText5 } from "@elizaos/core";
+import { composeContext as composeContext4 } from "@elizaos/core";
+import { generateText as generateText4 } from "@elizaos/core";
 import { parseJSONObjectFromText as parseJSONObjectFromText4 } from "@elizaos/core";
 import {
-  ModelClass as ModelClass5
+  ModelClass as ModelClass4
 } from "@elizaos/core";
 var mediaAttachmentIdTemplate = `# Messages we are transcribing
 {{recentMessages}}
@@ -1232,15 +763,15 @@ Your response must be formatted as a JSON block with this structure:
 `;
 var getMediaAttachmentId = async (runtime, message, state) => {
   state = await runtime.composeState(message);
-  const context = composeContext5({
+  const context = composeContext4({
     state,
     template: mediaAttachmentIdTemplate
   });
   for (let i = 0; i < 5; i++) {
-    const response = await generateText5({
+    const response = await generateText4({
       runtime,
       context,
-      modelClass: ModelClass5.SMALL
+      modelClass: ModelClass4.SMALL
     });
     console.log("response", response);
     const parsedResponse = parseJSONObjectFromText4(response);
@@ -1377,24 +908,24 @@ ${mediaTranscript.trim()}
 var transcribe_media_default = transcribeMediaAction;
 
 // src/messages.ts
-import { composeContext as composeContext6, composeRandomUser } from "@elizaos/core";
+import { composeContext as composeContext5, composeRandomUser } from "@elizaos/core";
 import { generateMessageResponse, generateShouldRespond } from "@elizaos/core";
 import {
-  ModelClass as ModelClass8,
+  ModelClass as ModelClass7,
   ServiceType as ServiceType2
 } from "@elizaos/core";
 import { stringToUuid, getEmbeddingZeroVector } from "@elizaos/core";
 import {
-  ChannelType as ChannelType4,
+  ChannelType as ChannelType2,
   TextChannel
 } from "discord.js";
 import { elizaLogger as elizaLogger2 } from "@elizaos/core";
 
 // src/attachments.ts
-import { generateText as generateText6, trimTokens as trimTokens3 } from "@elizaos/core";
+import { generateText as generateText5, trimTokens as trimTokens3 } from "@elizaos/core";
 import { parseJSONObjectFromText as parseJSONObjectFromText5 } from "@elizaos/core";
 import {
-  ModelClass as ModelClass6
+  ModelClass as ModelClass5
 } from "@elizaos/core";
 import { Collection } from "discord.js";
 async function generateSummary(runtime, text) {
@@ -1412,10 +943,10 @@ async function generateSummary(runtime, text) {
     "summary": "Generated summary and/or description of the text"
   }
   \`\`\``;
-  const response = await generateText6({
+  const response = await generateText5({
     runtime,
     context: prompt,
-    modelClass: ModelClass6.SMALL
+    modelClass: ModelClass5.SMALL
   });
   const parsedResponse = parseJSONObjectFromText5(response);
   if (parsedResponse?.title && parsedResponse?.summary) {
@@ -1766,37 +1297,17 @@ var IGNORE_RESPONSE_WORDS = [
 
 // src/utils.ts
 import {
-  ModelClass as ModelClass7,
+  ModelClass as ModelClass6,
   elizaLogger,
-  generateText as generateText7,
+  generateText as generateText6,
   trimTokens as trimTokens4,
   parseJSONObjectFromText as parseJSONObjectFromText6
 } from "@elizaos/core";
 import {
-  ChannelType as ChannelType3,
+  ChannelType,
   PermissionsBitField,
   ThreadChannel
 } from "discord.js";
-function getWavHeader(audioLength, sampleRate, channelCount = 1, bitsPerSample = 16) {
-  const wavHeader = Buffer.alloc(44);
-  wavHeader.write("RIFF", 0);
-  wavHeader.writeUInt32LE(36 + audioLength, 4);
-  wavHeader.write("WAVE", 8);
-  wavHeader.write("fmt ", 12);
-  wavHeader.writeUInt32LE(16, 16);
-  wavHeader.writeUInt16LE(1, 20);
-  wavHeader.writeUInt16LE(channelCount, 22);
-  wavHeader.writeUInt32LE(sampleRate, 24);
-  wavHeader.writeUInt32LE(
-    sampleRate * bitsPerSample * channelCount / 8,
-    28
-  );
-  wavHeader.writeUInt16LE(bitsPerSample * channelCount / 8, 32);
-  wavHeader.writeUInt16LE(bitsPerSample, 34);
-  wavHeader.write("data", 36);
-  wavHeader.writeUInt32LE(audioLength, 40);
-  return wavHeader;
-}
 var MAX_MESSAGE_LENGTH = 1900;
 async function sendMessageInChunks(channel, content, inReplyTo, files) {
   const sentMessages = [];
@@ -1852,7 +1363,7 @@ function canSendMessage(channel) {
       reason: "No channel given"
     };
   }
-  if (channel.type === ChannelType3.DM) {
+  if (channel.type === ChannelType.DM) {
     return {
       canSend: true,
       reason: null
@@ -1957,14 +1468,12 @@ var MessageManager = class {
   attachmentManager;
   interestChannels = {};
   discordClient;
-  voiceManager;
   //Auto post
   autoPostConfig;
   lastChannelActivity = {};
   autoPostInterval;
-  constructor(discordClient, voiceManager) {
+  constructor(discordClient) {
     this.client = discordClient.client;
-    this.voiceManager = voiceManager;
     this.discordClient = discordClient;
     this.runtime = discordClient.runtime;
     this.attachmentManager = new AttachmentManager(this.runtime);
@@ -1998,7 +1507,7 @@ var MessageManager = class {
         return;
       }
     }
-    if (this.runtime.character.clientConfig?.discord?.shouldIgnoreDirectMessages && message.channel.type === ChannelType4.DM) {
+    if (this.runtime.character.clientConfig?.discord?.shouldIgnoreDirectMessages && message.channel.type === ChannelType2.DM) {
       return;
     }
     const userId = message.author.id;
@@ -2183,7 +1692,7 @@ var MessageManager = class {
         shouldRespond = await this._shouldRespond(message, state);
       }
       if (shouldRespond) {
-        const context = composeContext6({
+        const context = composeContext5({
           state,
           template: this.runtime.character.templates?.discordMessageHandlerTemplate || discordMessageHandlerTemplate
         });
@@ -2277,7 +1786,7 @@ var MessageManager = class {
       await this.runtime.evaluate(memory, state, shouldRespond);
     } catch (error) {
       console.error("Error handling message:", error);
-      if (message.channel.type === ChannelType4.GuildVoice) {
+      if (message.channel.type === ChannelType2.GuildVoice) {
         const errorMessage = "Sorry, I had a glitch. What was that?";
         const speechService = this.runtime.getService(
           ServiceType2.SPEECH_GENERATION
@@ -2289,7 +1798,6 @@ var MessageManager = class {
           this.runtime,
           errorMessage
         );
-        await this.voiceManager.playAudioStream(userId, audioStream);
       } else {
         console.error("Error sending message:", error);
       }
@@ -2350,7 +1858,7 @@ var MessageManager = class {
             discordMessage: null,
             agentName: this.runtime.character.name || this.client.user?.displayName
           });
-          const context = composeContext6({
+          const context = composeContext5({
             state,
             template: this.runtime.character.templates?.discordAutoPostTemplate || discordAutoPostTemplate
           });
@@ -2393,7 +1901,7 @@ var MessageManager = class {
     for (const announcementChannelId of this.autoPostConfig.announcementChannelIds) {
       const channel = this.client.channels.cache.get(announcementChannelId);
       if (channel) {
-        if (channel instanceof TextChannel || channel.type === ChannelType4.GuildAnnouncement) {
+        if (channel instanceof TextChannel || channel.type === ChannelType2.GuildAnnouncement) {
           const newsChannel = channel;
           try {
             newsChannel.createMessageCollector().on("collect", async (message) => {
@@ -2422,7 +1930,7 @@ var MessageManager = class {
                   announcementChannelId: channel.id,
                   agentName: this.runtime.character.name || this.client.user?.displayName
                 });
-                const context = composeContext6({
+                const context = composeContext5({
                   state,
                   template: this.runtime.character.templates?.discordAnnouncementHypeTemplate || discordAnnouncementHypeTemplate
                 });
@@ -2850,14 +2358,14 @@ var MessageManager = class {
     if (!message.guild) {
       return true;
     }
-    const shouldRespondContext = composeContext6({
+    const shouldRespondContext = composeContext5({
       state,
       template: this.runtime.character.templates?.discordShouldRespondTemplate || this.runtime.character.templates?.shouldRespondTemplate || composeRandomUser(discordShouldRespondTemplate, 2)
     });
     const response = await generateShouldRespond({
       runtime: this.runtime,
       context: shouldRespondContext,
-      modelClass: ModelClass8.SMALL
+      modelClass: ModelClass7.SMALL
     });
     if (response === "RESPOND") {
       if (channelState) {
@@ -2885,7 +2393,7 @@ var MessageManager = class {
     const response = await generateMessageResponse({
       runtime: this.runtime,
       context,
-      modelClass: ModelClass8.LARGE
+      modelClass: ModelClass7.LARGE
     });
     if (!response) {
       console.error("No response from generateMessageResponse");
@@ -2938,7 +2446,7 @@ var MessageManager = class {
 
 // src/providers/channelState.ts
 import {
-  ChannelType as ChannelType5
+  ChannelType as ChannelType3
 } from "discord.js";
 var channelStateProvider = {
   get: async (runtime, message, state) => {
@@ -2960,7 +2468,7 @@ var channelStateProvider = {
       return "";
     }
     let response = agentName + " is currently having a conversation in the channel `@" + channel.id + " in the server `" + serverName + "` (@" + guildId + ")";
-    if (channel.type === ChannelType5.GuildText && channel.topic) {
+    if (channel.type === ChannelType3.GuildText && channel.topic) {
       response += "\nThe topic of the channel is: " + channel.topic;
     }
     return response;
@@ -2968,872 +2476,14 @@ var channelStateProvider = {
 };
 var channelState_default = channelStateProvider;
 
-// src/providers/voiceState.ts
-import { getVoiceConnection as getVoiceConnection2 } from "@discordjs/voice";
-import { ChannelType as ChannelType6 } from "discord.js";
-var voiceStateProvider = {
-  get: async (runtime, message, state) => {
-    const discordMessage = state?.discordMessage || state.discordChannel;
-    const connection = getVoiceConnection2(
-      discordMessage?.guild?.id
-    );
-    const agentName = state?.agentName || "The agent";
-    if (!connection) {
-      return agentName + " is not currently in a voice channel";
-    }
-    const channel = (state?.discordMessage || state.discordChannel)?.guild?.channels?.cache?.get(
-      connection.joinConfig.channelId
-    );
-    if (!channel || channel.type !== ChannelType6.GuildVoice) {
-      return agentName + " is in an invalid voice channel";
-    }
-    return `${agentName} is currently in the voice channel: ${channel.name} (ID: ${channel.id})`;
-  }
-};
-var voiceState_default = voiceStateProvider;
-
-// src/voice.ts
-import {
-  ModelClass as ModelClass9,
-  ServiceType as ServiceType3,
-  composeContext as composeContext7,
-  composeRandomUser as composeRandomUser2,
-  elizaLogger as elizaLogger3,
-  getEmbeddingZeroVector as getEmbeddingZeroVector2,
-  generateMessageResponse as generateMessageResponse2,
-  stringToUuid as stringToUuid2,
-  generateShouldRespond as generateShouldRespond2
-} from "@elizaos/core";
-import {
-  NoSubscriberBehavior,
-  StreamType,
-  VoiceConnectionStatus,
-  createAudioPlayer,
-  createAudioResource,
-  getVoiceConnections,
-  joinVoiceChannel as joinVoiceChannel2,
-  entersState
-} from "@discordjs/voice";
-import {
-  ChannelType as ChannelType7
-} from "discord.js";
-import EventEmitter from "events";
-import prism from "prism-media";
-import { pipeline } from "stream";
-var DECODE_FRAME_SIZE = 1024;
-var DECODE_SAMPLE_RATE = 16e3;
-var AudioMonitor = class {
-  readable;
-  buffers = [];
-  maxSize;
-  lastFlagged = -1;
-  ended = false;
-  constructor(readable, maxSize, onStart, callback) {
-    this.readable = readable;
-    this.maxSize = maxSize;
-    this.readable.on("data", (chunk) => {
-      if (this.lastFlagged < 0) {
-        this.lastFlagged = this.buffers.length;
-      }
-      this.buffers.push(chunk);
-      const currentSize = this.buffers.reduce(
-        (acc, cur) => acc + cur.length,
-        0
-      );
-      while (currentSize > this.maxSize) {
-        this.buffers.shift();
-        this.lastFlagged--;
-      }
-    });
-    this.readable.on("end", () => {
-      elizaLogger3.log("AudioMonitor ended");
-      this.ended = true;
-      if (this.lastFlagged < 0) return;
-      callback(this.getBufferFromStart());
-      this.lastFlagged = -1;
-    });
-    this.readable.on("speakingStopped", () => {
-      if (this.ended) return;
-      elizaLogger3.log("Speaking stopped");
-      if (this.lastFlagged < 0) return;
-      callback(this.getBufferFromStart());
-    });
-    this.readable.on("speakingStarted", () => {
-      if (this.ended) return;
-      onStart();
-      elizaLogger3.log("Speaking started");
-      this.reset();
-    });
-  }
-  stop() {
-    this.readable.removeAllListeners("data");
-    this.readable.removeAllListeners("end");
-    this.readable.removeAllListeners("speakingStopped");
-    this.readable.removeAllListeners("speakingStarted");
-  }
-  isFlagged() {
-    return this.lastFlagged >= 0;
-  }
-  getBufferFromFlag() {
-    if (this.lastFlagged < 0) {
-      return null;
-    }
-    const buffer = Buffer.concat(this.buffers.slice(this.lastFlagged));
-    return buffer;
-  }
-  getBufferFromStart() {
-    const buffer = Buffer.concat(this.buffers);
-    return buffer;
-  }
-  reset() {
-    this.buffers = [];
-    this.lastFlagged = -1;
-  }
-  isEnded() {
-    return this.ended;
-  }
-};
-var VoiceManager = class extends EventEmitter {
-  processingVoice = false;
-  transcriptionTimeout = null;
-  userStates = /* @__PURE__ */ new Map();
-  activeAudioPlayer = null;
-  client;
-  runtime;
-  streams = /* @__PURE__ */ new Map();
-  connections = /* @__PURE__ */ new Map();
-  activeMonitors = /* @__PURE__ */ new Map();
-  constructor(client) {
-    super();
-    this.client = client.client;
-    this.runtime = client.runtime;
-  }
-  async handleVoiceStateUpdate(oldState, newState) {
-    const oldChannelId = oldState.channelId;
-    const newChannelId = newState.channelId;
-    const member = newState.member;
-    if (!member) return;
-    if (member.id === this.client.user?.id) {
-      return;
-    }
-    if (oldChannelId === newChannelId) {
-      return;
-    }
-    if (oldChannelId && this.connections.has(oldChannelId)) {
-      this.stopMonitoringMember(member.id);
-    }
-    if (newChannelId && this.connections.has(newChannelId)) {
-      await this.monitorMember(
-        member,
-        newState.channel
-      );
-    }
-  }
-  async joinChannel(channel) {
-    const oldConnection = this.getVoiceConnection(
-      channel.guildId
-    );
-    if (oldConnection) {
-      try {
-        oldConnection.destroy();
-        this.streams.clear();
-        this.activeMonitors.clear();
-      } catch (error) {
-        console.error("Error leaving voice channel:", error);
-      }
-    }
-    const connection = joinVoiceChannel2({
-      channelId: channel.id,
-      guildId: channel.guild.id,
-      adapterCreator: channel.guild.voiceAdapterCreator,
-      selfDeaf: false,
-      selfMute: false,
-      group: this.client.user.id
-    });
-    try {
-      await Promise.race([
-        entersState(connection, VoiceConnectionStatus.Ready, 2e4),
-        entersState(
-          connection,
-          VoiceConnectionStatus.Signalling,
-          2e4
-        )
-      ]);
-      elizaLogger3.log(
-        `Voice connection established in state: ${connection.state.status}`
-      );
-      connection.on("stateChange", async (oldState, newState) => {
-        elizaLogger3.log(
-          `Voice connection state changed from ${oldState.status} to ${newState.status}`
-        );
-        if (newState.status === VoiceConnectionStatus.Disconnected) {
-          elizaLogger3.log("Handling disconnection...");
-          try {
-            await Promise.race([
-              entersState(
-                connection,
-                VoiceConnectionStatus.Signalling,
-                5e3
-              ),
-              entersState(
-                connection,
-                VoiceConnectionStatus.Connecting,
-                5e3
-              )
-            ]);
-            elizaLogger3.log("Reconnecting to channel...");
-          } catch (e) {
-            elizaLogger3.log(
-              "Disconnection confirmed - cleaning up..." + e
-            );
-            connection.destroy();
-            this.connections.delete(channel.id);
-          }
-        } else if (newState.status === VoiceConnectionStatus.Destroyed) {
-          this.connections.delete(channel.id);
-        } else if (!this.connections.has(channel.id) && (newState.status === VoiceConnectionStatus.Ready || newState.status === VoiceConnectionStatus.Signalling)) {
-          this.connections.set(channel.id, connection);
-        }
-      });
-      connection.on("error", (error) => {
-        elizaLogger3.log("Voice connection error:", error);
-        elizaLogger3.log(
-          "Connection error - will attempt to recover..."
-        );
-      });
-      this.connections.set(channel.id, connection);
-      const me = channel.guild.members.me;
-      if (me?.voice && me.permissions.has("DeafenMembers")) {
-        try {
-          await me.voice.setDeaf(false);
-          await me.voice.setMute(false);
-        } catch (error) {
-          elizaLogger3.log("Failed to modify voice state:", error);
-        }
-      }
-      connection.receiver.speaking.on("start", async (userId) => {
-        let user = channel.members.get(userId);
-        if (!user) {
-          try {
-            user = await channel.guild.members.fetch(userId);
-          } catch (error) {
-            console.error("Failed to fetch user:", error);
-          }
-        }
-        if (user && !user?.user.bot) {
-          this.monitorMember(user, channel);
-          this.streams.get(userId)?.emit("speakingStarted");
-        }
-      });
-      connection.receiver.speaking.on("end", async (userId) => {
-        const user = channel.members.get(userId);
-        if (!user?.user.bot) {
-          this.streams.get(userId)?.emit("speakingStopped");
-        }
-      });
-    } catch (error) {
-      elizaLogger3.log("Failed to establish voice connection:", error);
-      connection.destroy();
-      this.connections.delete(channel.id);
-      throw error;
-    }
-  }
-  getVoiceConnection(guildId) {
-    const connections = getVoiceConnections(this.client.user.id);
-    if (!connections) {
-      return;
-    }
-    const connection = [...connections.values()].find(
-      (connection2) => connection2.joinConfig.guildId === guildId
-    );
-    return connection;
-  }
-  async monitorMember(member, channel) {
-    const userId = member?.id;
-    const userName = member?.user?.username;
-    const name = member?.user?.displayName;
-    const connection = this.getVoiceConnection(member?.guild?.id);
-    const receiveStream = connection?.receiver.subscribe(userId, {
-      autoDestroy: true,
-      emitClose: true
-    });
-    if (!receiveStream || receiveStream.readableLength === 0) {
-      return;
-    }
-    const opusDecoder = new prism.opus.Decoder({
-      channels: 1,
-      rate: DECODE_SAMPLE_RATE,
-      frameSize: DECODE_FRAME_SIZE
-    });
-    const volumeBuffer = [];
-    const VOLUME_WINDOW_SIZE = 30;
-    const SPEAKING_THRESHOLD = 0.05;
-    opusDecoder.on("data", (pcmData) => {
-      if (this.activeAudioPlayer) {
-        const samples = new Int16Array(
-          pcmData.buffer,
-          pcmData.byteOffset,
-          pcmData.length / 2
-        );
-        const maxAmplitude = Math.max(...samples.map(Math.abs)) / 32768;
-        volumeBuffer.push(maxAmplitude);
-        if (volumeBuffer.length > VOLUME_WINDOW_SIZE) {
-          volumeBuffer.shift();
-        }
-        const avgVolume = volumeBuffer.reduce((sum, v) => sum + v, 0) / VOLUME_WINDOW_SIZE;
-        if (avgVolume > SPEAKING_THRESHOLD) {
-          volumeBuffer.length = 0;
-          this.cleanupAudioPlayer(this.activeAudioPlayer);
-          this.processingVoice = false;
-        }
-      }
-    });
-    pipeline(
-      receiveStream,
-      opusDecoder,
-      (err) => {
-        if (err) {
-          console.log(`Opus decoding pipeline error: ${err}`);
-        }
-      }
-    );
-    this.streams.set(userId, opusDecoder);
-    this.connections.set(userId, connection);
-    opusDecoder.on("error", (err) => {
-      console.log(`Opus decoding error: ${err}`);
-    });
-    const errorHandler = (err) => {
-      console.log(`Opus decoding error: ${err}`);
-    };
-    const streamCloseHandler = () => {
-      console.log(`voice stream from ${member?.displayName} closed`);
-      this.streams.delete(userId);
-      this.connections.delete(userId);
-    };
-    const closeHandler = () => {
-      console.log(`Opus decoder for ${member?.displayName} closed`);
-      opusDecoder.removeListener("error", errorHandler);
-      opusDecoder.removeListener("close", closeHandler);
-      receiveStream?.removeListener("close", streamCloseHandler);
-    };
-    opusDecoder.on("error", errorHandler);
-    opusDecoder.on("close", closeHandler);
-    receiveStream?.on("close", streamCloseHandler);
-    this.client.emit(
-      "userStream",
-      userId,
-      name,
-      userName,
-      channel,
-      opusDecoder
-    );
-  }
-  leaveChannel(channel) {
-    const connection = this.connections.get(channel.id);
-    if (connection) {
-      connection.destroy();
-      this.connections.delete(channel.id);
-    }
-    for (const [memberId, monitorInfo] of this.activeMonitors) {
-      if (monitorInfo.channel.id === channel.id && memberId !== this.client.user?.id) {
-        this.stopMonitoringMember(memberId);
-      }
-    }
-    console.log(`Left voice channel: ${channel.name} (${channel.id})`);
-  }
-  stopMonitoringMember(memberId) {
-    const monitorInfo = this.activeMonitors.get(memberId);
-    if (monitorInfo) {
-      monitorInfo.monitor.stop();
-      this.activeMonitors.delete(memberId);
-      this.streams.delete(memberId);
-      console.log(`Stopped monitoring user ${memberId}`);
-    }
-  }
-  async handleGuildCreate(guild) {
-    console.log(`Joined guild ${guild.name}`);
-  }
-  async debouncedProcessTranscription(userId, name, userName, channel) {
-    const DEBOUNCE_TRANSCRIPTION_THRESHOLD = 1500;
-    if (this.activeAudioPlayer?.state?.status === "idle") {
-      elizaLogger3.log("Cleaning up idle audio player.");
-      this.cleanupAudioPlayer(this.activeAudioPlayer);
-    }
-    if (this.activeAudioPlayer || this.processingVoice) {
-      const state = this.userStates.get(userId);
-      state.buffers.length = 0;
-      state.totalLength = 0;
-      return;
-    }
-    if (this.transcriptionTimeout) {
-      clearTimeout(this.transcriptionTimeout);
-    }
-    this.transcriptionTimeout = setTimeout(async () => {
-      this.processingVoice = true;
-      try {
-        await this.processTranscription(
-          userId,
-          channel.id,
-          channel,
-          name,
-          userName
-        );
-        this.userStates.forEach((state, _) => {
-          state.buffers.length = 0;
-          state.totalLength = 0;
-        });
-      } finally {
-        this.processingVoice = false;
-      }
-    }, DEBOUNCE_TRANSCRIPTION_THRESHOLD);
-  }
-  async handleUserStream(userId, name, userName, channel, audioStream) {
-    console.log(`Starting audio monitor for user: ${userId}`);
-    if (!this.userStates.has(userId)) {
-      this.userStates.set(userId, {
-        buffers: [],
-        totalLength: 0,
-        lastActive: Date.now(),
-        transcriptionText: ""
-      });
-    }
-    const state = this.userStates.get(userId);
-    const processBuffer = async (buffer) => {
-      try {
-        state.buffers.push(buffer);
-        state.totalLength += buffer.length;
-        state.lastActive = Date.now();
-        this.debouncedProcessTranscription(
-          userId,
-          name,
-          userName,
-          channel
-        );
-      } catch (error) {
-        console.error(
-          `Error processing buffer for user ${userId}:`,
-          error
-        );
-      }
-    };
-    new AudioMonitor(
-      audioStream,
-      1e7,
-      () => {
-        if (this.transcriptionTimeout) {
-          clearTimeout(this.transcriptionTimeout);
-        }
-      },
-      async (buffer) => {
-        if (!buffer) {
-          console.error("Received empty buffer");
-          return;
-        }
-        await processBuffer(buffer);
-      }
-    );
-  }
-  async processTranscription(userId, channelId, channel, name, userName) {
-    const state = this.userStates.get(userId);
-    if (!state || state.buffers.length === 0) return;
-    try {
-      let isValidTranscription = function(text) {
-        if (!text || text.includes("[BLANK_AUDIO]")) return false;
-        return true;
-      };
-      const inputBuffer = Buffer.concat(state.buffers, state.totalLength);
-      state.buffers.length = 0;
-      state.totalLength = 0;
-      const wavBuffer = await this.convertOpusToWav(inputBuffer);
-      console.log("Starting transcription...");
-      const transcriptionText = await this.runtime.getService(ServiceType3.TRANSCRIPTION).transcribe(wavBuffer);
-      if (transcriptionText && isValidTranscription(transcriptionText)) {
-        state.transcriptionText += transcriptionText;
-      }
-      if (state.transcriptionText.length) {
-        this.cleanupAudioPlayer(this.activeAudioPlayer);
-        const finalText = state.transcriptionText;
-        state.transcriptionText = "";
-        await this.handleUserMessage(
-          finalText,
-          userId,
-          channelId,
-          channel,
-          name,
-          userName
-        );
-      }
-    } catch (error) {
-      console.error(
-        `Error transcribing audio for user ${userId}:`,
-        error
-      );
-    }
-  }
-  async handleUserMessage(message, userId, channelId, channel, name, userName) {
-    try {
-      const roomId = stringToUuid2(channelId + "-" + this.runtime.agentId);
-      const userIdUUID = stringToUuid2(userId);
-      await this.runtime.ensureConnection(
-        userIdUUID,
-        roomId,
-        userName,
-        name,
-        "discord"
-      );
-      let state = await this.runtime.composeState(
-        {
-          agentId: this.runtime.agentId,
-          content: { text: message, source: "Discord" },
-          userId: userIdUUID,
-          roomId
-        },
-        {
-          discordChannel: channel,
-          discordClient: this.client,
-          agentName: this.runtime.character.name
-        }
-      );
-      if (message && message.startsWith("/")) {
-        return null;
-      }
-      const memory = {
-        id: stringToUuid2(channelId + "-voice-message-" + Date.now()),
-        agentId: this.runtime.agentId,
-        content: {
-          text: message,
-          source: "discord",
-          url: channel.url
-        },
-        userId: userIdUUID,
-        roomId,
-        embedding: getEmbeddingZeroVector2(),
-        createdAt: Date.now()
-      };
-      if (!memory.content.text) {
-        return { text: "", action: "IGNORE" };
-      }
-      await this.runtime.messageManager.createMemory(memory);
-      state = await this.runtime.updateRecentMessageState(state);
-      const shouldIgnore = await this._shouldIgnore(memory);
-      if (shouldIgnore) {
-        return { text: "", action: "IGNORE" };
-      }
-      const shouldRespond = await this._shouldRespond(
-        message,
-        userId,
-        channel,
-        state
-      );
-      if (!shouldRespond) {
-        return;
-      }
-      const context = composeContext7({
-        state,
-        template: this.runtime.character.templates?.discordVoiceHandlerTemplate || this.runtime.character.templates?.messageHandlerTemplate || discordVoiceHandlerTemplate
-      });
-      const responseContent = await this._generateResponse(
-        memory,
-        state,
-        context
-      );
-      const callback = async (content2) => {
-        console.log("callback content: ", content2);
-        const { roomId: roomId2 } = memory;
-        const responseMemory = {
-          id: stringToUuid2(
-            memory.id + "-voice-response-" + Date.now()
-          ),
-          agentId: this.runtime.agentId,
-          userId: this.runtime.agentId,
-          content: {
-            ...content2,
-            user: this.runtime.character.name,
-            inReplyTo: memory.id
-          },
-          roomId: roomId2,
-          embedding: getEmbeddingZeroVector2()
-        };
-        if (responseMemory.content.text?.trim()) {
-          await this.runtime.messageManager.createMemory(
-            responseMemory
-          );
-          state = await this.runtime.updateRecentMessageState(state);
-          const responseStream = await this.runtime.getService(
-            ServiceType3.SPEECH_GENERATION
-          ).generate(this.runtime, content2.text);
-          if (responseStream) {
-            await this.playAudioStream(
-              userId,
-              responseStream
-            );
-          }
-          await this.runtime.evaluate(memory, state);
-        } else {
-          console.warn("Empty response, skipping");
-        }
-        return [responseMemory];
-      };
-      const responseMemories = await callback(responseContent);
-      const response = responseContent;
-      const content = response.responseMessage || response.content || response.message;
-      if (!content) {
-        return null;
-      }
-      console.log("responseMemories: ", responseMemories);
-      await this.runtime.processActions(
-        memory,
-        responseMemories,
-        state,
-        callback
-      );
-    } catch (error) {
-      console.error("Error processing transcribed text:", error);
-    }
-  }
-  async convertOpusToWav(pcmBuffer) {
-    try {
-      const wavHeader = getWavHeader(
-        pcmBuffer.length,
-        DECODE_SAMPLE_RATE
-      );
-      const wavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
-      return wavBuffer;
-    } catch (error) {
-      console.error("Error converting PCM to WAV:", error);
-      throw error;
-    }
-  }
-  async _shouldRespond(message, userId, channel, state) {
-    if (userId === this.client.user?.id) return false;
-    const lowerMessage = message.toLowerCase();
-    const botName = this.client.user.username.toLowerCase();
-    const characterName = this.runtime.character.name.toLowerCase();
-    const guild = channel.guild;
-    const member = guild?.members.cache.get(this.client.user?.id);
-    const nickname = member?.nickname;
-    if (lowerMessage.includes(botName) || lowerMessage.includes(characterName) || lowerMessage.includes(
-      this.client.user?.tag.toLowerCase()
-    ) || nickname && lowerMessage.includes(nickname.toLowerCase())) {
-      return true;
-    }
-    if (!channel.guild) {
-      return true;
-    }
-    const shouldRespondContext = composeContext7({
-      state,
-      template: this.runtime.character.templates?.discordShouldRespondTemplate || this.runtime.character.templates?.shouldRespondTemplate || composeRandomUser2(discordShouldRespondTemplate, 2)
-    });
-    const response = await generateShouldRespond2({
-      runtime: this.runtime,
-      context: shouldRespondContext,
-      modelClass: ModelClass9.SMALL
-    });
-    if (response === "RESPOND") {
-      return true;
-    } else if (response === "IGNORE") {
-      return false;
-    } else if (response === "STOP") {
-      return false;
-    } else {
-      console.error(
-        "Invalid response from response generateText:",
-        response
-      );
-      return false;
-    }
-  }
-  async _generateResponse(message, state, context) {
-    const { userId, roomId } = message;
-    const response = await generateMessageResponse2({
-      runtime: this.runtime,
-      context,
-      modelClass: ModelClass9.SMALL
-    });
-    response.source = "discord";
-    if (!response) {
-      console.error("No response from generateMessageResponse");
-      return;
-    }
-    await this.runtime.databaseAdapter.log({
-      body: { message, context, response },
-      userId,
-      roomId,
-      type: "response"
-    });
-    return response;
-  }
-  async _shouldIgnore(message) {
-    elizaLogger3.debug("message.content: ", message.content);
-    if (message.content.text.length < 3) {
-      return true;
-    }
-    const loseInterestWords = [
-      // telling the bot to stop talking
-      "shut up",
-      "stop",
-      "dont talk",
-      "silence",
-      "stop talking",
-      "be quiet",
-      "hush",
-      "stfu",
-      "stupid bot",
-      "dumb bot",
-      // offensive words
-      "fuck",
-      "shit",
-      "damn",
-      "suck",
-      "dick",
-      "cock",
-      "sex",
-      "sexy"
-    ];
-    if (message.content.text.length < 50 && loseInterestWords.some(
-      (word) => message.content.text?.toLowerCase().includes(word)
-    )) {
-      return true;
-    }
-    const ignoreWords = ["k", "ok", "bye", "lol", "nm", "uh"];
-    if (message.content.text?.length < 8 && ignoreWords.some(
-      (word) => message.content.text?.toLowerCase().includes(word)
-    )) {
-      return true;
-    }
-    return false;
-  }
-  async scanGuild(guild) {
-    let chosenChannel = null;
-    try {
-      const channelId = this.runtime.getSetting(
-        "DISCORD_VOICE_CHANNEL_ID"
-      );
-      if (channelId) {
-        const channel = await guild.channels.fetch(channelId);
-        if (channel?.isVoiceBased()) {
-          chosenChannel = channel;
-        }
-      }
-      if (!chosenChannel) {
-        const channels = (await guild.channels.fetch()).filter(
-          (channel) => channel?.type == ChannelType7.GuildVoice
-        );
-        for (const [, channel] of channels) {
-          const voiceChannel = channel;
-          if (voiceChannel.members.size > 0 && (chosenChannel === null || voiceChannel.members.size > chosenChannel.members.size)) {
-            chosenChannel = voiceChannel;
-          }
-        }
-      }
-      if (chosenChannel) {
-        console.log(`Joining channel: ${chosenChannel.name}`);
-        await this.joinChannel(chosenChannel);
-      } else {
-        console.warn("No suitable voice channel found to join.");
-      }
-    } catch (error) {
-      console.error("Error selecting or joining a voice channel:", error);
-    }
-  }
-  async playAudioStream(userId, audioStream) {
-    const connection = this.connections.get(userId);
-    if (connection == null) {
-      console.log(`No connection for user ${userId}`);
-      return;
-    }
-    this.cleanupAudioPlayer(this.activeAudioPlayer);
-    const audioPlayer = createAudioPlayer({
-      behaviors: {
-        noSubscriber: NoSubscriberBehavior.Pause
-      }
-    });
-    this.activeAudioPlayer = audioPlayer;
-    connection.subscribe(audioPlayer);
-    const audioStartTime = Date.now();
-    const resource = createAudioResource(audioStream, {
-      inputType: StreamType.Arbitrary
-    });
-    audioPlayer.play(resource);
-    audioPlayer.on("error", (err) => {
-      console.log(`Audio player error: ${err}`);
-    });
-    audioPlayer.on(
-      "stateChange",
-      (_oldState, newState) => {
-        if (newState.status == "idle") {
-          const idleTime = Date.now();
-          console.log(
-            `Audio playback took: ${idleTime - audioStartTime}ms`
-          );
-        }
-      }
-    );
-  }
-  cleanupAudioPlayer(audioPlayer) {
-    if (!audioPlayer) return;
-    audioPlayer.stop();
-    audioPlayer.removeAllListeners();
-    if (audioPlayer === this.activeAudioPlayer) {
-      this.activeAudioPlayer = null;
-    }
-  }
-  async handleJoinChannelCommand(interaction) {
-    try {
-      await interaction.deferReply();
-      const channelId = interaction.options.get("channel")?.value;
-      if (!channelId) {
-        await interaction.editReply(
-          "Please provide a voice channel to join."
-        );
-        return;
-      }
-      const guild = interaction.guild;
-      if (!guild) {
-        await interaction.editReply("Could not find guild.");
-        return;
-      }
-      const voiceChannel = interaction.guild.channels.cache.find(
-        (channel) => channel.id === channelId && channel.type === ChannelType7.GuildVoice
-      );
-      if (!voiceChannel) {
-        await interaction.editReply("Voice channel not found!");
-        return;
-      }
-      await this.joinChannel(voiceChannel);
-      await interaction.editReply(
-        `Joined voice channel: ${voiceChannel.name}`
-      );
-    } catch (error) {
-      console.error("Error joining voice channel:", error);
-      await interaction.editReply("Failed to join the voice channel.").catch(console.error);
-    }
-  }
-  async handleLeaveChannelCommand(interaction) {
-    const connection = this.getVoiceConnection(interaction.guildId);
-    if (!connection) {
-      await interaction.reply("Not currently in a voice channel.");
-      return;
-    }
-    try {
-      connection.destroy();
-      await interaction.reply("Left the voice channel.");
-    } catch (error) {
-      console.error("Error leaving voice channel:", error);
-      await interaction.reply("Failed to leave the voice channel.");
-    }
-  }
-};
-
 // src/client.ts
 import { PermissionsBitField as PermissionsBitField2 } from "discord.js";
-var DiscordClient = class extends EventEmitter2 {
+var DiscordClient = class extends EventEmitter {
   apiToken;
   client;
   runtime;
   character;
   messageManager;
-  voiceManager;
   constructor(runtime) {
     super();
     this.apiToken = runtime.getSetting("DISCORD_API_TOKEN");
@@ -3856,19 +2506,15 @@ var DiscordClient = class extends EventEmitter2 {
       ]
     });
     this.runtime = runtime;
-    this.voiceManager = new VoiceManager(this);
-    this.messageManager = new MessageManager(this, this.voiceManager);
+    this.messageManager = new MessageManager(this);
     this.client.once(Events.ClientReady, this.onClientReady.bind(this));
     this.client.login(this.apiToken);
     this.setupEventListeners();
-    this.runtime.registerAction(joinvoice_default);
-    this.runtime.registerAction(leavevoice_default);
     this.runtime.registerAction(summarize_conversation_default);
     this.runtime.registerAction(chat_with_attachments_default);
     this.runtime.registerAction(transcribe_media_default);
     this.runtime.registerAction(download_media_default);
     this.runtime.providers.push(channelState_default);
-    this.runtime.providers.push(voiceState_default);
   }
   setupEventListeners() {
     this.client.on("guildCreate", this.handleGuildCreate.bind(this));
@@ -3881,31 +2527,19 @@ var DiscordClient = class extends EventEmitter2 {
       this.handleReactionRemove.bind(this)
     );
     this.client.on(
-      "voiceStateUpdate",
-      this.voiceManager.handleVoiceStateUpdate.bind(this.voiceManager)
-    );
-    this.client.on(
-      "userStream",
-      this.voiceManager.handleUserStream.bind(this.voiceManager)
-    );
-    this.client.on(
       Events.MessageCreate,
       this.messageManager.handleMessage.bind(this.messageManager)
-    );
-    this.client.on(
-      Events.InteractionCreate,
-      this.handleInteractionCreate.bind(this)
     );
   }
   async stop() {
     try {
       await this.client.destroy();
     } catch (e) {
-      elizaLogger4.error("client-discord instance stop err", e);
+      elizaLogger3.error("client-discord instance stop err", e);
     }
   }
   async onClientReady(readyClient) {
-    elizaLogger4.success(`Logged in as ${readyClient.user?.tag}`);
+    elizaLogger3.success(`Logged in as ${readyClient.user?.tag}`);
     const commands = [
       {
         name: "joinchannel",
@@ -3929,7 +2563,7 @@ var DiscordClient = class extends EventEmitter2 {
     ];
     try {
       await this.client.application?.commands.set(commands);
-      elizaLogger4.success("Slash commands registered");
+      elizaLogger3.success("Slash commands registered");
     } catch (error) {
       console.error("Error registering slash commands:", error);
     }
@@ -3954,17 +2588,17 @@ var DiscordClient = class extends EventEmitter2 {
       PermissionsBitField2.Flags.UseVAD,
       PermissionsBitField2.Flags.PrioritySpeaker
     ].reduce((a, b) => a | b, 0n);
-    elizaLogger4.success("Use this URL to add the bot to your server:");
-    elizaLogger4.success(
+    elizaLogger3.success("Use this URL to add the bot to your server:");
+    elizaLogger3.success(
       `https://discord.com/api/oauth2/authorize?client_id=${readyClient.user?.id}&permissions=${requiredPermissions}&scope=bot%20applications.commands`
     );
     await this.onReady();
   }
   async handleReactionAdd(reaction, user) {
     try {
-      elizaLogger4.log("Reaction added");
+      elizaLogger3.log("Reaction added");
       if (!reaction || !user) {
-        elizaLogger4.warn("Invalid reaction or user");
+        elizaLogger3.warn("Invalid reaction or user");
         return;
       }
       let emoji = reaction.emoji.name;
@@ -3975,7 +2609,7 @@ var DiscordClient = class extends EventEmitter2 {
         try {
           await reaction.fetch();
         } catch (error) {
-          elizaLogger4.error(
+          elizaLogger3.error(
             "Failed to fetch partial reaction:",
             error
           );
@@ -3983,17 +2617,17 @@ var DiscordClient = class extends EventEmitter2 {
         }
       }
       const timestamp = Date.now();
-      const roomId = stringToUuid3(
+      const roomId = stringToUuid2(
         `${reaction.message.channel.id}-${this.runtime.agentId}`
       );
-      const userIdUUID = stringToUuid3(
+      const userIdUUID = stringToUuid2(
         `${user.id}-${this.runtime.agentId}`
       );
-      const reactionUUID = stringToUuid3(
+      const reactionUUID = stringToUuid2(
         `${reaction.message.id}-${user.id}-${emoji}-${timestamp}-${this.runtime.agentId}`
       );
       if (!userIdUUID || !roomId) {
-        elizaLogger4.error("Invalid user ID or room ID", {
+        elizaLogger3.error("Invalid user ID or room ID", {
           userIdUUID,
           roomId
         });
@@ -4018,24 +2652,24 @@ var DiscordClient = class extends EventEmitter2 {
         content: {
           text: reactionMessage,
           source: "discord",
-          inReplyTo: stringToUuid3(
+          inReplyTo: stringToUuid2(
             `${reaction.message.id}-${this.runtime.agentId}`
           )
         },
         roomId,
         createdAt: timestamp,
-        embedding: getEmbeddingZeroVector3()
+        embedding: getEmbeddingZeroVector2()
       };
       try {
         await this.runtime.messageManager.createMemory(memory);
-        elizaLogger4.debug("Reaction memory created", {
+        elizaLogger3.debug("Reaction memory created", {
           reactionId: reactionUUID,
           emoji,
           userId: user.id
         });
       } catch (error) {
         if (error.code === "23505") {
-          elizaLogger4.warn("Duplicate reaction memory, skipping", {
+          elizaLogger3.warn("Duplicate reaction memory, skipping", {
             reactionId: reactionUUID
           });
           return;
@@ -4043,11 +2677,11 @@ var DiscordClient = class extends EventEmitter2 {
         throw error;
       }
     } catch (error) {
-      elizaLogger4.error("Error handling reaction:", error);
+      elizaLogger3.error("Error handling reaction:", error);
     }
   }
   async handleReactionRemove(reaction, user) {
-    elizaLogger4.log("Reaction removed");
+    elizaLogger3.log("Reaction removed");
     let emoji = reaction.emoji.name;
     if (!emoji && reaction.emoji.id) {
       emoji = `<:${reaction.emoji.name}:${reaction.emoji.id}>`;
@@ -4066,11 +2700,11 @@ var DiscordClient = class extends EventEmitter2 {
     const messageContent = reaction.message.content;
     const truncatedContent = messageContent.length > 50 ? messageContent.substring(0, 50) + "..." : messageContent;
     const reactionMessage = `*Removed <${emoji} emoji> from: "${truncatedContent}"*`;
-    const roomId = stringToUuid3(
+    const roomId = stringToUuid2(
       reaction.message.channel.id + "-" + this.runtime.agentId
     );
-    const userIdUUID = stringToUuid3(user.id);
-    const reactionUUID = stringToUuid3(
+    const userIdUUID = stringToUuid2(user.id);
+    const reactionUUID = stringToUuid2(
       `${reaction.message.id}-${user.id}-${emoji}-removed-${this.runtime.agentId}`
     );
     const userName = reaction.message.author.username;
@@ -4091,14 +2725,14 @@ var DiscordClient = class extends EventEmitter2 {
         content: {
           text: reactionMessage,
           source: "discord",
-          inReplyTo: stringToUuid3(
+          inReplyTo: stringToUuid2(
             reaction.message.id + "-" + this.runtime.agentId
           )
           // This is the ID of the original message
         },
         roomId,
         createdAt: Date.now(),
-        embedding: getEmbeddingZeroVector3()
+        embedding: getEmbeddingZeroVector2()
       });
     } catch (error) {
       console.error("Error creating reaction removal message:", error);
@@ -4106,25 +2740,8 @@ var DiscordClient = class extends EventEmitter2 {
   }
   handleGuildCreate(guild) {
     console.log(`Joined guild ${guild.name}`);
-    this.voiceManager.scanGuild(guild);
-  }
-  async handleInteractionCreate(interaction) {
-    if (!interaction.isCommand()) return;
-    switch (interaction.commandName) {
-      case "joinchannel":
-        await this.voiceManager.handleJoinChannelCommand(interaction);
-        break;
-      case "leavechannel":
-        await this.voiceManager.handleLeaveChannelCommand(interaction);
-        break;
-    }
   }
   async onReady() {
-    const guilds = await this.client.guilds.fetch();
-    for (const [, guild] of guilds) {
-      const fullGuild = await guild.fetch();
-      this.voiceManager.scanGuild(fullGuild);
-    }
   }
 };
 var DiscordClientInterface = {

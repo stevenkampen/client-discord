@@ -19,14 +19,10 @@ import {
 import { EventEmitter } from "events";
 import chat_with_attachments from "./actions/chat_with_attachments.ts";
 import download_media from "./actions/download_media.ts";
-import joinvoice from "./actions/joinvoice.ts";
-import leavevoice from "./actions/leavevoice.ts";
 import summarize from "./actions/summarize_conversation.ts";
 import transcribe_media from "./actions/transcribe_media.ts";
 import { MessageManager } from "./messages.ts";
 import channelStateProvider from "./providers/channelState.ts";
-import voiceStateProvider from "./providers/voiceState.ts";
-import { VoiceManager } from "./voice.ts";
 import { PermissionsBitField } from "discord.js";
 
 class DiscordClient extends EventEmitter {
@@ -35,7 +31,6 @@ class DiscordClient extends EventEmitter {
     runtime: IAgentRuntime;
     character: Character;
     private messageManager: MessageManager;
-    private voiceManager: VoiceManager;
 
     constructor(runtime: IAgentRuntime) {
         super();
@@ -61,23 +56,19 @@ class DiscordClient extends EventEmitter {
         });
 
         this.runtime = runtime;
-        this.voiceManager = new VoiceManager(this);
-        this.messageManager = new MessageManager(this, this.voiceManager);
+        this.messageManager = new MessageManager(this);
 
         this.client.once(Events.ClientReady, this.onClientReady.bind(this));
         this.client.login(this.apiToken);
 
         this.setupEventListeners();
 
-        this.runtime.registerAction(joinvoice);
-        this.runtime.registerAction(leavevoice);
         this.runtime.registerAction(summarize);
         this.runtime.registerAction(chat_with_attachments);
         this.runtime.registerAction(transcribe_media);
         this.runtime.registerAction(download_media);
 
         this.runtime.providers.push(channelStateProvider);
-        this.runtime.providers.push(voiceStateProvider);
     }
 
     private setupEventListeners() {
@@ -93,27 +84,12 @@ class DiscordClient extends EventEmitter {
             this.handleReactionRemove.bind(this)
         );
 
-        // Handle voice events with the voice manager
-        this.client.on(
-            "voiceStateUpdate",
-            this.voiceManager.handleVoiceStateUpdate.bind(this.voiceManager)
-        );
-        this.client.on(
-            "userStream",
-            this.voiceManager.handleUserStream.bind(this.voiceManager)
-        );
-
         // Handle a new message with the message manager
         this.client.on(
             Events.MessageCreate,
             this.messageManager.handleMessage.bind(this.messageManager)
         );
 
-        // Handle a new interaction
-        this.client.on(
-            Events.InteractionCreate,
-            this.handleInteractionCreate.bind(this)
-        );
     }
 
     async stop() {
@@ -372,28 +348,9 @@ class DiscordClient extends EventEmitter {
 
     private handleGuildCreate(guild: Guild) {
         console.log(`Joined guild ${guild.name}`);
-        this.voiceManager.scanGuild(guild);
-    }
-
-    private async handleInteractionCreate(interaction: any) {
-        if (!interaction.isCommand()) return;
-
-        switch (interaction.commandName) {
-            case "joinchannel":
-                await this.voiceManager.handleJoinChannelCommand(interaction);
-                break;
-            case "leavechannel":
-                await this.voiceManager.handleLeaveChannelCommand(interaction);
-                break;
-        }
     }
 
     private async onReady() {
-        const guilds = await this.client.guilds.fetch();
-        for (const [, guild] of guilds) {
-            const fullGuild = await guild.fetch();
-            this.voiceManager.scanGuild(fullGuild);
-        }
     }
 }
 
